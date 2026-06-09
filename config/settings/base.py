@@ -31,6 +31,15 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'apps.core',
+    'apps.accounts',
+    'apps.products',
+    'apps.orders',
+    'apps.portfolio',
+    'apps.design_request',
+    'apps.payments',
+    'apps.content',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -114,22 +123,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-INSTALLED_APPS = [
-    'apps.core',
-    'apps.accounts',
-    'apps.products',
-    'apps.orders',
-    'apps.portfolio',
-    'apps.design_request',
-    'apps.payments',
-    'apps.content',
 
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 
 STATIC_URL = 'static/'
