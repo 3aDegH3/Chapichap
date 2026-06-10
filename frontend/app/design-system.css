@@ -1,0 +1,16 @@
+:root {
+  --primary: #1e3a8a;
+  --secondary: #6b21a8;
+  --accent: #f97316;
+
+  --bg: #f9fafb;
+  --text: #111827;
+
+  --card: #ffffff;
+  --border: #e5e7eb;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}

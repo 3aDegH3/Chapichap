@@ -1,23 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getHealth } from "../frontend/lib/api";
+import Button from "../components/Button";
+import Card from "../components/Card";
 
 export default function Home() {
-  const [data, setData] = useState<any>(null);
+  const [status, setStatus] = useState("loading...");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/v1/health/")
-      .then((res) => res.json())
-      .then((data) => setData(data));
+    getHealth()
+      .then((data) => setStatus(data.status))
+      .catch(() => setStatus("error"));
   }, []);
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Frontend is Connected</h1>
+    <main style={{ padding: "40px" }}>
+      <h1>هدیه‌ای خاص برای آدم‌های خاص</h1>
 
-      <pre>
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </div>
+      <p>Backend: {status}</p>
+
+      <Button onClick={() => alert("شروع سفارش")}>
+        شروع سفارش
+      </Button>
+
+      <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+        <Card>چاپ روی ماگ</Card>
+        <Card>چاپ روی تیشرت</Card>
+        <Card>هدایای اختصاصی</Card>
+      </div>
+    </main>
   );
 }
