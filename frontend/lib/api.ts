@@ -1,11 +1,18 @@
+import axios from "axios";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import { getAccessToken } from "./auth";
 
-export async function getHealth() {
-  const res = await fetch(`${BASE_URL}/api/v1/health/`);
+export const api = axios.create({
+  baseURL: `${BASE_URL}/api/v1`,
+});
 
-  if (!res.ok) {
-    throw new Error("API Error");
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  return res.json();
-}
+  return config;
+});
