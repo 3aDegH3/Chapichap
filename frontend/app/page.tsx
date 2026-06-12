@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getHealth } from "../frontend/lib/api";
+import { getHealth } from "../lib/api";
 import Button from "../components/Button";
 import Card from "../components/Card";
 

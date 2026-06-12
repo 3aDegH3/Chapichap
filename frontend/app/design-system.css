@@ -1,13 +1,14 @@
 :root {
-  --primary: #1e3a8a;
-  --secondary: #6b21a8;
-  --accent: #f97316;
+  --primary: #E6007E;
+  --secondary: #00AEEF;
+  --accent: #FFD100;
+  --dark: #1A1A1A;
 
-  --bg: #f9fafb;
-  --text: #111827;
+  --bg: #1A1A1A;
+  --text: #ffffff;
 
-  --card: #ffffff;
-  --border: #e5e7eb;
+  --card: #2a2a2a;
+  --border: #E6007E;
 }
 
 body {
