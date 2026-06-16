@@ -8,12 +8,6 @@
 
   --background: #ffffff;
   --foreground: #1A1A1A;
-
-  --muted: #f7f7f8;
-  --muted-foreground: #666666;
-
-  --card: #ffffff;
-  --border: #e8e8ec;
 }
 
 * {
@@ -46,4 +40,27 @@ select {
 ::selection {
   background: var(--primary);
   color: white;
+}
+
+.brand-bg {
+  background:
+    radial-gradient(circle at 10% 15%, rgba(230, 0, 126, 0.08), transparent 22%),
+    radial-gradient(circle at 90% 10%, rgba(0, 174, 239, 0.08), transparent 22%),
+    radial-gradient(circle at 50% 100%, rgba(255, 209, 0, 0.12), transparent 28%),
+    #ffffff;
+}
+
+@keyframes headerMascotFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+}
+
+.header-mascot-float {
+  animation: headerMascotFloat 3.2s ease-in-out infinite;
 }

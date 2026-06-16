@@ -6,7 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "چاپینو | چاپ و هدایای اختصاصی",
+  title: "Chapi chap | چاپ و هدایای اختصاصی",
   description: "فروشگاه آنلاین چاپ، هدیه اختصاصی و سفارش طراحی",
 };
 
@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
       <body>
         <AppProviders>
-          <div className="min-h-screen bg-white text-[var(--dark)]">
+          <div className="min-h-screen brand-bg text-[var(--dark)]">
             <Header />
             {children}
             <Footer />
