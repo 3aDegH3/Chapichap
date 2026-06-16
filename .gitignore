@@ -1,54 +1,66 @@
-# =====================
-# Python / Django
-# =====================
+# =========================
+# 🔥 Python / Django
+# =========================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
 *.sqlite3
+db.sqlite3
 
-.env
-.env.*
-!.env.example
-
+# Virtual environments
 venv/
 env/
 .venv/
+ENV/
 
-# Django stuff
-*.log
-local_settings.py
-
+# Django media/static (اگر داری)
 media/
+staticfiles/
 
-# =====================
-# Node / Next.js
-# =====================
+# logs
+*.log
+
+# migrations (اختیاری ولی پیشنهاد میشه ignore نشه)
+# migrations/__pycache__/
+
+# =========================
+# 🔥 Node / Next.js
+# =========================
 node_modules/
 .next/
 out/
 dist/
+build/
 
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# =====================
-# IDE / Editor
-# =====================
+# env
+.env
+.env.local
+.env.development
+.env.production
+
+# =========================
+# 🔥 OS / Editor
+# =========================
+.DS_Store
 .vscode/
 .idea/
+
+# =========================
+# 🔥 Coverage / Tests
+# =========================
+coverage/
+*.cover
+.pytest_cache/
+
+# =========================
+# 🔥 Misc
+# =========================
 *.swp
 *.swo
-
-# =====================
-# OS
-# =====================
-.DS_Store
-Thumbs.db
-
-# =====================
-# TypeScript
-# =====================
-*.tsbuildinfo
