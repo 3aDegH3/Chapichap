@@ -18,27 +18,27 @@ ALLOWED_HOSTS = []
 # =========================
 INSTALLED_APPS = [
     # Django apps
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 
-    # Third-party
-    'rest_framework',
-    'corsheaders',
-    'rest_framework_simplejwt.token_blacklist',
+    # Third-party apps
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
 
     # Local apps
-    'apps.core',
-    'apps.accounts',
-    'apps.products',
-    'apps.orders',
-    'apps.portfolio',
-    'apps.design_request',
-    'apps.payments',
-    'apps.content',
+    "apps.core",
+    "apps.accounts",
+    "apps.products",
+    "apps.orders",
+    "apps.design_request",
+    "apps.portfolio",
+    "apps.payments",
+    "apps.content",
 ]
 
 
