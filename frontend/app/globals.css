@@ -1,19 +1,49 @@
-/* Reset ساده */
+@import "tailwindcss";
+
+:root {
+  --primary: #E6007E;
+  --secondary: #00AEEF;
+  --accent: #FFD100;
+  --dark: #1A1A1A;
+
+  --background: #ffffff;
+  --foreground: #1A1A1A;
+
+  --muted: #f7f7f8;
+  --muted-foreground: #666666;
+
+  --card: #ffffff;
+  --border: #e8e8ec;
+}
+
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: Arial, sans-serif;
-  background: #ffffff;
-  color: #111;
+html {
+  scroll-behavior: smooth;
 }
 
-/* layout wrapper */
-.layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--primary);
+  color: white;
 }

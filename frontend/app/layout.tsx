@@ -1,24 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import "./design-system.css";
 
-export const metadata = {
-  title: "Print & Gift Store",
-  description: "Custom printing and personalized gifts",
+import AppProviders from "@/components/providers/AppProviders";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+
+export const metadata: Metadata = {
+  title: "چاپ و هدایای اختصاصی",
+  description: "فروشگاه آنلاین چاپ، هدیه اختصاصی و سفارش طراحی",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="fa">
+    <html lang="fa" dir="rtl">
       <body>
-        <div className="layout">
-          {children}
-        </div>
+        <AppProviders>
+          <div className="min-h-screen bg-slate-50 text-slate-900">
+            <Header />
+            <main>{children}</main>
+            <Footer />
+          </div>
+        </AppProviders>
       </body>
     </html>
   );
