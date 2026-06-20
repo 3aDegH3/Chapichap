@@ -48,6 +48,13 @@ class PortfolioAPITests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
 
+    def test_portfolio_list_uses_q_param_for_url_synced_search(self):
+        response = self.client.get("/api/v1/portfolio/", {"q": "تولد"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["slug"], "birthday-mug")
+
     def test_portfolio_detail_returns_images_and_related_items(self):
         response = self.client.get("/api/v1/portfolio/birthday-mug/")
 

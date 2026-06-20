@@ -26,7 +26,7 @@ class ProductListAPIView(ListAPIView):
 
     filter_backends = [
         DjangoFilterBackend,
-        SearchFilter,
+        QuerySearchFilter,
         OrderingFilter,
     ]
 

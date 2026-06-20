@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import PortfolioCard from "@/components/portfolio/PortfolioCard";
 import PortfolioPreviewModal from "@/components/portfolio/PortfolioPreviewModal";
+import Pagination from "@/components/ui/Pagination";
 import {
   getPortfolioItems,
   type PortfolioItem,
@@ -17,6 +18,7 @@ export default function PortfolioClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const initialPage = Number(searchParams.get("page") || "1");
   const [items, setItems] = useState<PortfolioItem[]>([]);
@@ -89,6 +91,11 @@ export default function PortfolioClient() {
     setPage(1);
   }
 
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <main className="bg-white">
       <section className="border-b border-gray-100 bg-gradient-to-b from-pink-50/70 via-white to-white">
@@ -143,63 +150,71 @@ export default function PortfolioClient() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-          <div>
-            <p className="text-sm font-black text-[var(--dark)]">
-              {count > 0
-                ? `${count.toLocaleString("fa-IR")} نمونه‌کار`
-                : "نمونه‌کاری یافت نشد"}
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              برای دیدن جزئیات، روی هر نمونه‌کار کلیک کن.
-            </p>
-          </div>
-
-          {(workType || debouncedSearch) && (
-            <button
-              type="button"
-              onClick={() => {
-                setWorkType("");
-                setSearch("");
-                setDebouncedSearch("");
-                setPage(1);
-              }}
-              className="h-10 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-            >
-              پاک کردن فیلترها
-            </button>
-          )}
-        </div>
-
-        {error && (
-          <div className="rounded-lg border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
-            {error}
-          </div>
-        )}
-
-        {isLoading ? (
-          <PortfolioGridSkeleton />
-        ) : items.length > 0 ? (
-          <>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((item) => (
-                <PortfolioCard
-                  key={item.id}
-                  item={item}
-                  onPreview={setSelectedItem}
-                />
-              ))}
+        <div
+          ref={resultsRef}
+          className="mb-5 scroll-mt-28 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+        >
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-black text-[var(--dark)]">
+                {count > 0
+                  ? `${count.toLocaleString("fa-IR")} نمونه‌کار`
+                  : "نمونه‌کاری یافت نشد"}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                برای دیدن جزئیات، روی هر نمونه‌کار کلیک کن.
+              </p>
             </div>
 
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          </>
-        ) : (
-          <EmptyPortfolioState />
-        )}
+            {(workType || debouncedSearch) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkType("");
+                  setSearch("");
+                  setDebouncedSearch("");
+                  setPage(1);
+                }}
+                className="h-10 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              >
+                پاک کردن فیلترها
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div aria-busy={isLoading}>
+          {error && (
+            <div className="rounded-lg border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          )}
+
+          {isLoading ? (
+            <PortfolioGridSkeleton />
+          ) : items.length > 0 ? (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {items.map((item) => (
+                  <PortfolioCard
+                    key={item.id}
+                    item={item}
+                    onPreview={setSelectedItem}
+                  />
+                ))}
+              </div>
+
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                label="صفحه‌بندی نمونه‌کارها"
+                onPageChange={handlePageChange}
+              />
+            </>
+          ) : (
+            <EmptyPortfolioState />
+          )}
+        </div>
       </section>
 
       <PortfolioPreviewModal
@@ -241,59 +256,5 @@ function EmptyPortfolioState() {
         شود.
       </p>
     </div>
-  );
-}
-
-function Pagination({
-  page,
-  totalPages,
-  onPageChange,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  if (totalPages <= 1) return null;
-
-  return (
-    <nav className="mt-8 flex items-center justify-center gap-2" aria-label="صفحه‌بندی نمونه‌کارها">
-      <button
-        type="button"
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        قبلی
-      </button>
-
-      {Array.from({ length: totalPages }).map((_, index) => {
-        const pageNumber = index + 1;
-
-        return (
-          <button
-            key={pageNumber}
-            type="button"
-            onClick={() => onPageChange(pageNumber)}
-            className={[
-              "h-11 min-w-11 rounded-full px-3 text-sm font-black transition",
-              pageNumber === page
-                ? "bg-[var(--dark)] text-white"
-                : "border border-gray-200 bg-white text-gray-700 hover:border-[var(--secondary)]",
-            ].join(" ")}
-          >
-            {pageNumber.toLocaleString("fa-IR")}
-          </button>
-        );
-      })}
-
-      <button
-        type="button"
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        بعدی
-      </button>
-    </nav>
   );
 }

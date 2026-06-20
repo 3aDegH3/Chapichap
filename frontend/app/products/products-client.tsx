@@ -1,12 +1,14 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import ProductCard from "@/components/products/ProductCard";
+import Pagination from "@/components/ui/Pagination";
 import {
   getCategories,
   getProducts,
+  productSortOptions,
   type Category,
   type Product,
 } from "@/lib/products-api";
@@ -17,6 +19,7 @@ export default function ProductsClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const initialPage = Number(searchParams.get("page") || "1");
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,6 +29,11 @@ export default function ProductsClient() {
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
+  const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
+  const [ordering, setOrdering] = useState(searchParams.get("sort") || "-created_at");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,21 +42,35 @@ export default function ProductsClient() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setDebouncedSearch(search.trim());
+      setDebouncedMinPrice(normalizePrice(minPrice));
+      setDebouncedMaxPrice(normalizePrice(maxPrice));
       setPage(1);
     }, 450);
 
     return () => window.clearTimeout(timeout);
-  }, [search]);
+  }, [search, minPrice, maxPrice]);
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (debouncedSearch) params.set("q", debouncedSearch);
+    if (debouncedMinPrice) params.set("min_price", debouncedMinPrice);
+    if (debouncedMaxPrice) params.set("max_price", debouncedMaxPrice);
+    if (ordering && ordering !== "-created_at") params.set("sort", ordering);
     if (page > 1) params.set("page", String(page));
 
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [category, debouncedSearch, page, pathname, router]);
+  }, [
+    category,
+    debouncedSearch,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+    ordering,
+    page,
+    pathname,
+    router,
+  ]);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +103,9 @@ export default function ProductsClient() {
           page,
           category,
           search: debouncedSearch,
+          minPrice: debouncedMinPrice,
+          maxPrice: debouncedMaxPrice,
+          ordering,
         });
 
         if (!isMounted) return;
@@ -102,15 +127,27 @@ export default function ProductsClient() {
     return () => {
       isMounted = false;
     };
-  }, [page, category, debouncedSearch]);
+  }, [page, category, debouncedSearch, debouncedMinPrice, debouncedMaxPrice, ordering]);
 
   const activeCategoryTitle = useMemo(() => {
     return categories.find((item) => item.slug === category)?.title;
   }, [categories, category]);
 
+  const hasActiveFilters =
+    Boolean(category) ||
+    Boolean(debouncedSearch) ||
+    Boolean(debouncedMinPrice) ||
+    Boolean(debouncedMaxPrice) ||
+    ordering !== "-created_at";
+
   function selectCategory(nextCategory: string) {
     setCategory(nextCategory);
     setPage(1);
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -172,26 +209,87 @@ export default function ProductsClient() {
                 ))}
               </div>
             </div>
+
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <p className="text-sm font-black text-[var(--dark)]">بازه قیمت</p>
+              <div className="mt-3 grid gap-3">
+                <label className="block">
+                  <span className="text-xs font-bold text-gray-500">از قیمت</span>
+                  <input
+                    inputMode="numeric"
+                    value={minPrice}
+                    onChange={(event) => setMinPrice(event.target.value)}
+                    placeholder="مثلا 200000"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-xs font-bold text-gray-500">تا قیمت</span>
+                  <input
+                    inputMode="numeric"
+                    value={maxPrice}
+                    onChange={(event) => setMaxPrice(event.target.value)}
+                    placeholder="مثلا 800000"
+                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-gray-100 pt-6">
+              <label
+                htmlFor="product-sort"
+                className="text-sm font-black text-[var(--dark)]"
+              >
+                مرتب‌سازی
+              </label>
+              <select
+                id="product-sort"
+                value={ordering}
+                onChange={(event) => {
+                  setOrdering(event.target.value);
+                  setPage(1);
+                }}
+                className="mt-3 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-black text-gray-700 outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+              >
+                {productSortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </aside>
 
-          <div>
+          <div ref={resultsRef} className="scroll-mt-28" aria-busy={isLoading}>
             <div className="mb-5 flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-black text-[var(--dark)]">
                   {count > 0 ? `${count.toLocaleString("fa-IR")} محصول` : "محصولی یافت نشد"}
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  {activeCategoryTitle ? `فیلتر: ${activeCategoryTitle}` : "نمایش همه دسته‌بندی‌ها"}
+                  {getFilterSummary({
+                    categoryTitle: activeCategoryTitle,
+                    search: debouncedSearch,
+                    minPrice: debouncedMinPrice,
+                    maxPrice: debouncedMaxPrice,
+                  })}
                 </p>
               </div>
 
-              {(category || debouncedSearch) && (
+              {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={() => {
                     setCategory("");
                     setSearch("");
                     setDebouncedSearch("");
+                    setMinPrice("");
+                    setMaxPrice("");
+                    setDebouncedMinPrice("");
+                    setDebouncedMaxPrice("");
+                    setOrdering("-created_at");
                     setPage(1);
                   }}
                   className="h-10 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
@@ -220,7 +318,8 @@ export default function ProductsClient() {
                 <Pagination
                   page={page}
                   totalPages={totalPages}
-                  onPageChange={setPage}
+                  label="صفحه‌بندی محصولات"
+                  onPageChange={handlePageChange}
                 />
               </>
             ) : (
@@ -240,6 +339,31 @@ function filterButtonClass(isActive: boolean) {
       ? "bg-[var(--secondary)] text-white shadow-sm"
       : "bg-gray-50 text-gray-700 hover:bg-sky-50 hover:text-[var(--secondary)]",
   ].join(" ");
+}
+
+function normalizePrice(value: string) {
+  return value.replace(/[^\d]/g, "");
+}
+
+function getFilterSummary({
+  categoryTitle,
+  search,
+  minPrice,
+  maxPrice,
+}: {
+  categoryTitle?: string;
+  search: string;
+  minPrice: string;
+  maxPrice: string;
+}) {
+  const filters = [
+    categoryTitle ? `دسته: ${categoryTitle}` : "",
+    search ? `جستجو: ${search}` : "",
+    minPrice ? `از ${Number(minPrice).toLocaleString("fa-IR")} تومان` : "",
+    maxPrice ? `تا ${Number(maxPrice).toLocaleString("fa-IR")} تومان` : "",
+  ].filter(Boolean);
+
+  return filters.length > 0 ? filters.join("، ") : "نمایش همه دسته‌بندی‌ها";
 }
 
 function ProductGridSkeleton() {
@@ -270,59 +394,5 @@ function EmptyProductsState() {
         عبارت جستجو یا دسته‌بندی را تغییر بده تا محصولات بیشتری نمایش داده شود.
       </p>
     </div>
-  );
-}
-
-function Pagination({
-  page,
-  totalPages,
-  onPageChange,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  if (totalPages <= 1) return null;
-
-  return (
-    <nav className="mt-8 flex items-center justify-center gap-2" aria-label="صفحه‌بندی محصولات">
-      <button
-        type="button"
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        قبلی
-      </button>
-
-      {Array.from({ length: totalPages }).map((_, index) => {
-        const pageNumber = index + 1;
-
-        return (
-          <button
-            key={pageNumber}
-            type="button"
-            onClick={() => onPageChange(pageNumber)}
-            className={[
-              "h-11 min-w-11 rounded-full px-3 text-sm font-black transition",
-              pageNumber === page
-                ? "bg-[var(--dark)] text-white"
-                : "border border-gray-200 bg-white text-gray-700 hover:border-[var(--secondary)]",
-            ].join(" ")}
-          >
-            {pageNumber.toLocaleString("fa-IR")}
-          </button>
-        );
-      })}
-
-      <button
-        type="button"
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        بعدی
-      </button>
-    </nav>
   );
 }

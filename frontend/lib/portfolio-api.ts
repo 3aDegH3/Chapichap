@@ -63,7 +63,7 @@ export async function getPortfolioItems({
     params: {
       page,
       work_type: workType || undefined,
-      search: search || undefined,
+      q: search || undefined,
     },
   });
 

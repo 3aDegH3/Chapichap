@@ -6,12 +6,16 @@ from .models import Portfolio
 from .serializers import PortfolioDetailSerializer, PortfolioSerializer
 
 
+class QuerySearchFilter(SearchFilter):
+    search_param = "q"
+
+
 class PortfolioListAPIView(ListAPIView):
     serializer_class = PortfolioSerializer
 
     filter_backends = [
         DjangoFilterBackend,
-        SearchFilter,
+        QuerySearchFilter,
         OrderingFilter,
     ]
 

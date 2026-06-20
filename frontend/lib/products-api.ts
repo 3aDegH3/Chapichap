@@ -46,19 +46,39 @@ type ProductQuery = {
   page?: number;
   category?: string;
   search?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  ordering?: string;
 };
+
+export const productSortOptions = [
+  { value: "-created_at", label: "جدیدترین" },
+  { value: "price", label: "ارزان‌ترین" },
+  { value: "-price", label: "گران‌ترین" },
+  { value: "title", label: "عنوان A تا Z" },
+] as const;
 
 export async function getCategories() {
   const response = await api.get<Category[]>("/categories/");
   return response.data;
 }
 
-export async function getProducts({ page = 1, category, search }: ProductQuery) {
+export async function getProducts({
+  page = 1,
+  category,
+  search,
+  minPrice,
+  maxPrice,
+  ordering,
+}: ProductQuery) {
   const response = await api.get<PaginatedResponse<Product>>("/products/", {
     params: {
       page,
       category__slug: category || undefined,
-      search: search || undefined,
+      q: search || undefined,
+      price__gte: minPrice || undefined,
+      price__lte: maxPrice || undefined,
+      ordering: ordering || undefined,
     },
   });
 

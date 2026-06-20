@@ -40,13 +40,38 @@ class ProductAPITests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
-        self.assertEqual(response.data["results"][0]["slug"], "custom-mug")
+        self.assertEqual(
+            {item["slug"] for item in response.data["results"]},
+            {"custom-mug", "brand-mug"},
+        )
 
     def test_product_list_filters_by_category_slug(self):
         response = self.client.get("/api/v1/products/", {"category__slug": "mug"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
+
+    def test_product_list_filters_by_price_range(self):
+        response = self.client.get(
+            "/api/v1/products/",
+            {
+                "price__gte": "260000",
+                "price__lte": "320000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["slug"], "brand-mug")
+
+    def test_product_list_orders_by_price(self):
+        response = self.client.get("/api/v1/products/", {"ordering": "price"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["slug"] for item in response.data["results"]],
+            ["custom-mug", "brand-mug"],
+        )
 
     def test_categories_endpoint_returns_active_categories(self):
         response = self.client.get("/api/v1/categories/")
@@ -59,6 +84,13 @@ class ProductAPITests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
+
+    def test_product_list_uses_q_param_for_url_synced_search(self):
+        response = self.client.get("/api/v1/products/", {"q": "اختصاصی"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["slug"], "custom-mug")
 
     def test_product_detail_returns_gallery_and_related_products(self):
         response = self.client.get("/api/v1/products/custom-mug/")
