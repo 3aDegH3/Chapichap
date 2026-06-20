@@ -35,10 +35,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
   return (
     <header
       className={cn(
@@ -214,6 +210,7 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setIsOpen(false)}
                     className={cn(
                       "rounded-xl px-4 py-3 text-sm font-black text-gray-700 transition hover:bg-sky-50 hover:text-[#00AEEF]",
                       isActive &&
@@ -227,6 +224,7 @@ export default function Header() {
 
               <Link
                 href="/cart"
+                onClick={() => setIsOpen(false)}
                 className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-sm font-black text-[#0090C8]"
               >
                 <span>🛒</span>
@@ -240,6 +238,7 @@ export default function Header() {
                   <div className="grid gap-2">
                     <Link
                       href="/profile"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl border border-[#FFD100]/60 bg-[#FFD100]/20 px-4 py-3 text-sm font-black text-[#1A1A1A]"
                     >
                       {user?.username || "پروفایل"}
@@ -260,6 +259,7 @@ export default function Header() {
                   <div className="grid gap-2">
                     <Link
                       href="/login"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl bg-sky-50 px-4 py-3 text-center text-sm font-black text-[#00AEEF]"
                     >
                       ورود
@@ -267,6 +267,7 @@ export default function Header() {
 
                     <Link
                       href="/register"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl bg-gradient-to-l from-[#00AEEF] to-[#0090C8] px-4 py-3 text-center text-sm font-black text-white shadow-[0_10px_24px_-6px_rgba(0,174,239,0.6)]"
                     >
                       ثبت‌نام

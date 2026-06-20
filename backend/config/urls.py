@@ -16,12 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path ,include
+from apps.products.views import CategoryListAPIView, ProductSearchAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/v1/", include("apps.core.api.v1.urls")),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/products/", include("apps.products.urls")),
+    path("api/v1/categories/", CategoryListAPIView.as_view(), name="category-list"),
+    path("api/v1/search/", ProductSearchAPIView.as_view(), name="product-search"),
+    path("api/v1/portfolio/", include("apps.portfolio.urls")),
 
 
 
