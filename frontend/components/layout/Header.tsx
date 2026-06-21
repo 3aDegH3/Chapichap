@@ -14,6 +14,7 @@ const navItems = [
   { href: "/products", label: "محصولات" },
   { href: "/portfolio", label: "نمونه‌کارها" },
   { href: "/design-request", label: "سفارش طراحی" },
+  { href: "/orders", label: "سفارش‌ها" },
   { href: "/about", label: "درباره ما" },
   { href: "/contact", label: "تماس" },
 ];

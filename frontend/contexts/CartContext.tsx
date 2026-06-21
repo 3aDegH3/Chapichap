@@ -34,6 +34,7 @@ type CartContextValue = {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
+  isReady: boolean;
   toast: Toast | null;
   addItem: (product: Product, quantity?: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -199,6 +200,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       totalItems: totals.totalItems,
       totalPrice: totals.totalPrice,
+      isReady: isHydrated,
       toast,
       addItem,
       updateQuantity,
@@ -206,7 +208,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       dismissToast: () => setToast(null),
     }),
-    [addItem, clearCart, items, removeItem, toast, totals.totalItems, totals.totalPrice, updateQuantity]
+    [
+      addItem,
+      clearCart,
+      isHydrated,
+      items,
+      removeItem,
+      toast,
+      totals.totalItems,
+      totals.totalPrice,
+      updateQuantity,
+    ]
   );
 
   return (

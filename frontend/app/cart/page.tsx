@@ -167,10 +167,10 @@ export default function CartPage() {
 
           <div className="mt-6 grid gap-3">
             <Link
-              href="/design-request"
+              href="/checkout"
               className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-black text-white transition hover:opacity-90"
             >
-              پرداخت / ثبت سفارش
+              ادامه فرایند خرید
             </Link>
             <Link
               href="/products"
