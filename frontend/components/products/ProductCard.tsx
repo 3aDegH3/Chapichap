@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 
+import { useCart } from "@/contexts/CartContext";
 import type { Product } from "@/lib/products-api";
 
 function formatPrice(price: string) {
@@ -7,6 +10,8 @@ function formatPrice(price: string) {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
+  const { addItem } = useCart();
+
   return (
     <article className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl">
       <Link href={`/products/${product.slug}`} className="block">
@@ -59,6 +64,22 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </Link>
+
+      <div className="grid grid-cols-2 gap-2 border-t border-gray-100 p-4">
+        <button
+          type="button"
+          onClick={() => addItem(product)}
+          className="h-11 rounded-full bg-[var(--secondary)] px-3 text-sm font-black text-white transition hover:opacity-90"
+        >
+          افزودن به سبد
+        </button>
+        <Link
+          href={`/design-request?product=${product.slug}`}
+          className="inline-flex h-11 items-center justify-center rounded-full border border-gray-200 bg-white px-3 text-sm font-black text-[var(--dark)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+        >
+          سفارش طراحی
+        </Link>
+      </div>
     </article>
   );
 }

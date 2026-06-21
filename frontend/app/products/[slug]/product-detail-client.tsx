@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import ProductCard from "@/components/products/ProductCard";
 import ProductGallery from "@/components/products/ProductGallery";
+import { useCart } from "@/contexts/CartContext";
 import { getProduct, type ProductDetail } from "@/lib/products-api";
 
 function formatPrice(price: string) {
@@ -14,6 +15,7 @@ function formatPrice(price: string) {
 
 export default function ProductDetailClient() {
   const params = useParams<{ slug: string }>();
+  const { addItem } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -116,12 +118,21 @@ export default function ProductDetailClient() {
                 </p>
               </div>
 
-              <Link
-                href={`/design-request?product=${product.slug}`}
-                className="inline-flex h-13 items-center justify-center rounded-full bg-[var(--primary)] px-7 text-sm font-black text-white shadow-lg shadow-pink-900/20 transition hover:opacity-90"
-              >
-                شروع سفارش
-              </Link>
+              <div className="grid gap-2 sm:min-w-48">
+                <button
+                  type="button"
+                  onClick={() => addItem(product)}
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--secondary)] px-7 text-sm font-black text-white shadow-lg shadow-sky-900/20 transition hover:opacity-90"
+                >
+                  افزودن به سبد
+                </button>
+                <Link
+                  href={`/design-request?product=${product.slug}`}
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-7 text-sm font-black text-white shadow-lg shadow-pink-900/20 transition hover:opacity-90"
+                >
+                  شروع سفارش
+                </Link>
+              </div>
             </div>
 
             <div className="mt-5 grid gap-3 border-t border-gray-100 pt-5 sm:grid-cols-3">
@@ -182,12 +193,21 @@ export default function ProductDetailClient() {
               {formatPrice(product.price)} تومان
             </p>
           </div>
-          <Link
-            href={`/design-request?product=${product.slug}`}
-            className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-black text-white shadow-lg shadow-pink-900/20"
-          >
-            شروع سفارش
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => addItem(product)}
+              className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--secondary)] px-4 text-sm font-black text-white shadow-lg shadow-sky-900/20"
+            >
+              سبد
+            </button>
+            <Link
+              href={`/design-request?product=${product.slug}`}
+              className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] px-4 text-sm font-black text-white shadow-lg shadow-pink-900/20"
+            >
+              سفارش
+            </Link>
+          </div>
         </div>
       </div>
     </main>
