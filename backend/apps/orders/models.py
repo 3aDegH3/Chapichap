@@ -85,6 +85,8 @@ class Order(models.Model):
     )
     shipping_cost = models.DecimalField(max_digits=12, decimal_places=2)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    coupon_code = models.CharField(max_length=60, blank=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(
         max_length=24,
@@ -124,3 +126,26 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_title} x {self.quantity}"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    previous_status = models.CharField(max_length=40, blank=True)
+    new_status = models.CharField(max_length=40)
+    title = models.CharField(max_length=180)
+    description = models.TextField(blank=True)
+    visible_to_customer = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="order_status_changes",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.order.order_number}: {self.new_status}"

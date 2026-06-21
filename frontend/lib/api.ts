@@ -72,3 +72,40 @@ export function getApiErrorMessage(error: unknown) {
 
   return "خطای غیرمنتظره‌ای رخ داد.";
 }
+
+function normalizeApiErrorValue(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    const firstMessage = value.find((item) => typeof item === "string");
+    return firstMessage || null;
+  }
+  if (value && typeof value === "object") {
+    const nestedMessage = Object.values(value as Record<string, unknown>)
+      .map(normalizeApiErrorValue)
+      .find(Boolean);
+    return nestedMessage || null;
+  }
+  return null;
+}
+
+export function getApiFieldErrors(error: unknown) {
+  if (!axios.isAxiosError(error)) return {};
+
+  const data = error.response?.data;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+
+  const responseData = data as { errors?: unknown; [key: string]: unknown };
+  const rawErrors =
+    responseData.errors && typeof responseData.errors === "object"
+      ? responseData.errors
+      : responseData;
+
+  return Object.entries(rawErrors as Record<string, unknown>).reduce<Record<string, string>>(
+    (result, [field, value]) => {
+      const message = normalizeApiErrorValue(value);
+      if (message) result[field] = message;
+      return result;
+    },
+    {}
+  );
+}

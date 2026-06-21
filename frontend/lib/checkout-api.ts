@@ -23,6 +23,7 @@ export type CheckoutPreview = {
 };
 
 export type CreateOrderPayload = {
+  address_id?: number | null;
   receiver_name: string;
   phone: string;
   province: string;
@@ -30,6 +31,9 @@ export type CreateOrderPayload = {
   address: string;
   postal_code: string;
   delivery_method: CheckoutDeliveryMethod;
+  save_address?: boolean;
+  address_title?: string;
+  coupon_code?: string;
   notes?: string;
 };
 
@@ -59,10 +63,13 @@ export type Order = {
   delivery_method_label: string;
   shipping_cost: string;
   subtotal: string;
+  discount_amount: string;
+  coupon_code: string;
   total_amount: string;
   status: string;
   status_label: string;
   notes: string;
+  status_history: OrderStatusHistory[];
   payment: {
     id: number;
     amount: string;
@@ -77,6 +84,17 @@ export type Order = {
   items: OrderItem[];
   created_at: string;
   updated_at: string;
+};
+
+export type OrderStatusHistory = {
+  id: number;
+  previous_status: string;
+  new_status: string;
+  status_label: string;
+  title: string;
+  description: string;
+  visible_to_customer: boolean;
+  created_at: string;
 };
 
 export async function getCheckoutPreview(deliveryMethod: CheckoutDeliveryMethod = "SHIPPING") {

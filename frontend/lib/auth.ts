@@ -1,9 +1,13 @@
 export type AuthUser = {
   id: number;
   email: string;
+  first_name: string;
+  last_name: string;
   phone_number: string | null;
   username: string | null;
   avatar: string | null;
+  email_verified: boolean;
+  phone_verified: boolean;
   date_joined: string;
 };
 

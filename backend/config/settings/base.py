@@ -1,10 +1,27 @@
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # =========================
 # BASE CONFIG
 # =========================
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_dotenv_file(path):
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
+
+load_dotenv_file(BASE_DIR.parent / ".env")
 
 SECRET_KEY = 'django-insecure-c8=0mx04$(ys@)#b5gu&b1@-^tx5cchl!9cvqc@tlk1_8z*dq'
 
@@ -136,6 +153,22 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# =========================
+# EMAIL
+# =========================
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "sadeghox@gmail.com")
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", DEFAULT_FROM_EMAIL)
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
 
 
 # =========================

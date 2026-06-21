@@ -118,7 +118,7 @@ class CheckoutPreviewAPIView(APIView):
 
 
 def get_order_queryset_for_request(request):
-    queryset = Order.objects.prefetch_related("items", "payments")
+    queryset = Order.objects.prefetch_related("items", "payments", "status_history")
 
     if request.user.is_authenticated:
         return queryset.filter(user=request.user)
@@ -139,7 +139,7 @@ class OrderListCreateAPIView(APIView):
         )
 
     def post(self, request):
-        serializer = OrderCreateSerializer(data=request.data)
+        serializer = OrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         cart = get_or_create_cart(request)
 

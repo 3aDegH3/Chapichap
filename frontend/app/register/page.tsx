@@ -10,8 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
+import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 
 const registerSchema = z.object({
+  first_name: z.string().trim().min(2, "نام را وارد کنید."),
+  last_name: z.string().trim().min(2, "نام خانوادگی را وارد کنید."),
   username: z.string().optional(),
   email: z.string().email("ایمیل معتبر وارد کنید."),
   phone_number: z.string().optional(),
@@ -20,6 +23,34 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+const fieldLabels: Record<keyof RegisterFormValues, string> = {
+  first_name: "نام",
+  last_name: "نام خانوادگی",
+  username: "نام کاربری",
+  email: "ایمیل",
+  phone_number: "شماره موبایل",
+  password: "رمز عبور",
+};
+
+function toPersianFieldError(field: string, message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("already exists") || normalized.includes("unique")) {
+    return "این مقدار قبلاً ثبت شده است.";
+  }
+  if (normalized.includes("valid email")) {
+    return "ایمیل معتبر وارد کنید.";
+  }
+  if (normalized.includes("blank") || normalized.includes("required")) {
+    return "این فیلد الزامی است.";
+  }
+  if (normalized.includes("at least") || normalized.includes("min_length")) {
+    return "مقدار واردشده کوتاه است.";
+  }
+
+  return message;
+}
+
 export default function RegisterPage() {
   const { register: registerUser, error: authError } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -27,11 +58,14 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      first_name: "",
+      last_name: "",
       email: "",
       phone_number: "",
       password: "",
@@ -47,8 +81,29 @@ export default function RegisterPage() {
         username: values.username || undefined,
         phone_number: values.phone_number || undefined,
       });
-    } catch {
-      setServerError(authError || "ثبت‌نام ناموفق بود. اطلاعات را بررسی کنید.");
+    } catch (error) {
+      const fieldErrors = getApiFieldErrors(error);
+      const appliedErrors = Object.entries(fieldErrors).filter(([field]) =>
+        field in fieldLabels
+      );
+
+      appliedErrors.forEach(([field, message]) => {
+        setError(field as keyof RegisterFormValues, {
+          type: "server",
+          message: toPersianFieldError(field, message),
+        });
+      });
+
+      if (appliedErrors.length > 0) {
+        setServerError(
+          `ثبت‌نام کامل نشد. مشکل در ${appliedErrors
+            .map(([field]) => fieldLabels[field as keyof RegisterFormValues])
+            .join("، ")} است.`
+        );
+        return;
+      }
+
+      setServerError(getApiErrorMessage(error) || authError || "ثبت‌نام ناموفق بود. اطلاعات را بررسی کنید.");
     }
   }
 
@@ -76,6 +131,22 @@ export default function RegisterPage() {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+              <Input
+                id="first_name"
+                label="نام"
+                placeholder="نام"
+                error={errors.first_name?.message}
+                {...register("first_name")}
+              />
+
+              <Input
+                id="last_name"
+                label="نام خانوادگی"
+                placeholder="نام خانوادگی"
+                error={errors.last_name?.message}
+                {...register("last_name")}
+              />
+
               <Input
                 id="username"
                 label="نام کاربری"

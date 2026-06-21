@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { Product } from "@/lib/products-api";
+import type { PaginatedResponse, Product } from "@/lib/products-api";
 
 export type UploadedFileResponse = {
   id: number;
@@ -52,6 +52,6 @@ export async function createDesignRequest(payload: DesignRequestPayload) {
 }
 
 export async function getDesignRequests() {
-  const response = await api.get<DesignRequest[]>("/design-requests/");
-  return response.data;
+  const response = await api.get<DesignRequest[] | PaginatedResponse<DesignRequest>>("/design-requests/");
+  return Array.isArray(response.data) ? response.data : response.data.results;
 }

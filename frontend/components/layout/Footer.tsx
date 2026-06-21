@@ -19,7 +19,7 @@ const supportLinks = [
   { href: "/faq", label: "سوالات متداول" },
   { href: "/about", label: "درباره ما" },
   { href: "/contact", label: "تماس با ما" },
-  { href: "/profile", label: "حساب کاربری" },
+  { href: "/account", label: "حساب کاربری" },
 ];
 
 const features = [

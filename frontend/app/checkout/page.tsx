@@ -9,7 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getApiErrorMessage } from "@/lib/api";
+import {
+  getAddresses,
+  validateOffer,
+  type CustomerAddress,
+  type ValidatedOffer,
+} from "@/lib/account-api";
 import {
   createOrder,
   getCheckoutPreview,
@@ -44,6 +51,9 @@ const checkoutSchema = z.object({
     .regex(/^[0-9۰-۹٠-٩]{10}$/, "کد پستی باید ۱۰ رقم باشد."),
   delivery_method: z.enum(["SHIPPING", "PICKUP"]),
   payment_method: z.enum(["IN_PERSON"]),
+  save_address: z.boolean(),
+  address_title: z.string().trim().optional(),
+  coupon_code: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 });
 
@@ -58,6 +68,9 @@ const defaultCheckoutValues: CheckoutFormValues = {
   postal_code: "",
   delivery_method: "SHIPPING",
   payment_method: "IN_PERSON",
+  save_address: false,
+  address_title: "",
+  coupon_code: "",
   notes: "",
 };
 
@@ -80,8 +93,13 @@ function formatPrice(price: number | string) {
 export default function CheckoutPage() {
   const router = useRouter();
   const { clearCart, isReady, totalItems } = useCart();
+  const { isAuthenticated } = useAuth();
   const [initialDraft] = useState<CheckoutFormValues | null>(readCheckoutDraft);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [offer, setOffer] = useState<ValidatedOffer | null>(null);
+  const [offerError, setOfferError] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,6 +110,7 @@ export default function CheckoutPage() {
     formState: { errors, isSubmitting, isValid },
     handleSubmit,
     register,
+    setValue,
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     mode: "onChange",
@@ -101,12 +120,15 @@ export default function CheckoutPage() {
   const watchedValues = useWatch({ control });
   const deliveryMethod = watchedValues.delivery_method || "SHIPPING";
   const paymentMethod = watchedValues.payment_method || "IN_PERSON";
+  const couponCode = watchedValues.coupon_code || "";
 
   const loadPreview = useCallback(async (method: CheckoutDeliveryMethod) => {
     setIsLoading(true);
     setError("");
 
     try {
+      setOffer(null);
+      setOfferError("");
       const data = await getCheckoutPreview(method);
       setPreview(data);
     } catch (previewError) {
@@ -133,6 +155,35 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  const applyAddress = useCallback((address: CustomerAddress) => {
+    setSelectedAddressId(address.id);
+    setValue("receiver_name", address.receiver_name, { shouldValidate: true });
+    setValue("phone", address.phone, { shouldValidate: true });
+    setValue("province", address.province, { shouldValidate: true });
+    setValue("city", address.city, { shouldValidate: true });
+    setValue("address", address.address, { shouldValidate: true });
+    setValue("postal_code", address.postal_code, { shouldValidate: true });
+  }, [setValue]);
+
+  const loadAddresses = useCallback(async () => {
+    if (!isAuthenticated) {
+      setAddresses([]);
+      return;
+    }
+
+    try {
+      const data = await getAddresses();
+      setAddresses(data.addresses);
+
+      const defaultAddress = data.addresses.find((address) => address.is_default) || data.addresses[0];
+      if (defaultAddress && !selectedAddressId) {
+        applyAddress(defaultAddress);
+      }
+    } catch {
+      setAddresses([]);
+    }
+  }, [applyAddress, isAuthenticated, selectedAddressId]);
+
   useEffect(() => {
     if (!isReady) return;
 
@@ -144,10 +195,11 @@ export default function CheckoutPage() {
     const timeout = window.setTimeout(() => {
       void loadPreview(deliveryMethod);
       void loadPaymentMethods();
+      void loadAddresses();
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [deliveryMethod, isReady, loadPaymentMethods, loadPreview, router, totalItems]);
+  }, [deliveryMethod, isReady, loadAddresses, loadPaymentMethods, loadPreview, router, totalItems]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -156,12 +208,36 @@ export default function CheckoutPage() {
     );
   }, [watchedValues]);
 
+  async function applyCoupon() {
+    if (!preview || !couponCode.trim()) {
+      setOffer(null);
+      setOfferError("");
+      return;
+    }
+
+    setOffer(null);
+    setOfferError("");
+
+    try {
+      const data = await validateOffer({
+        coupon_code: couponCode.trim(),
+        order_amount: preview.total_amount,
+        shipping_cost: preview.shipping_cost,
+      });
+      setOffer(data);
+    } catch (couponError) {
+      setOfferError(getApiErrorMessage(couponError));
+    }
+  }
+
   async function submitOrder(values: CheckoutFormValues) {
     setSubmitError("");
 
     try {
       const order = await createOrder({
+        address_id: selectedAddressId,
         ...values,
+        coupon_code: offer ? values.coupon_code?.trim() : "",
         notes: values.notes || "",
       });
 
@@ -184,6 +260,9 @@ export default function CheckoutPage() {
       router.push(`/order/error?message=${encodeURIComponent(message)}`);
     }
   }
+
+  const discountAmount = offer ? Number(offer.discount_amount) || 0 : 0;
+  const payableTotal = Math.max(Number(preview?.total_amount || 0) - discountAmount, 0);
 
   return (
     <main className="bg-white">
@@ -237,6 +316,41 @@ export default function CheckoutPage() {
             <div className="space-y-6">
               <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <h2 className="text-xl font-black text-[var(--dark)]">اطلاعات گیرنده</h2>
+
+                {addresses.length > 0 && (
+                  <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50 p-4">
+                    <p className="text-sm font-black text-[var(--secondary)]">آدرس‌های ذخیره‌شده</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      {addresses.map((address) => (
+                        <button
+                          key={address.id}
+                          type="button"
+                          onClick={() => applyAddress(address)}
+                          className={`rounded-lg border p-4 text-right text-sm transition ${
+                            selectedAddressId === address.id
+                              ? "border-[var(--secondary)] bg-white text-[var(--dark)]"
+                              : "border-sky-100 bg-white/70 text-gray-600 hover:border-[var(--secondary)]"
+                          }`}
+                        >
+                          <span className="block font-black">{address.title}</span>
+                          <span className="mt-2 block font-bold leading-7">
+                            {address.receiver_name}، {address.city}، {address.address}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    {selectedAddressId && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAddressId(null)}
+                        className="mt-3 text-xs font-black text-[var(--secondary)]"
+                      >
+                        ثبت آدرس جدید به‌جای آدرس ذخیره‌شده
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-5 grid gap-5 sm:grid-cols-2">
                   <CheckoutField label="نام و نام خانوادگی" error={errors.receiver_name?.message}>
                     <input
@@ -299,6 +413,22 @@ export default function CheckoutPage() {
                       placeholder="اختیاری؛ مثل زمان مناسب تماس یا توضیح تحویل"
                     />
                   </CheckoutField>
+
+                  {isAuthenticated && !selectedAddressId && (
+                    <div className="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:grid-cols-[1fr_220px]">
+                      <label className="flex items-center gap-3 text-sm font-black text-[var(--dark)]">
+                        <input type="checkbox" className="h-5 w-5 rounded border-gray-300" {...register("save_address")} />
+                        این آدرس ذخیره شود
+                      </label>
+                      {watchedValues.save_address && (
+                        <input
+                          {...register("address_title")}
+                          className={inputClass(false)}
+                          placeholder="عنوان آدرس"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -364,18 +494,52 @@ export default function CheckoutPage() {
         <aside className="h-fit rounded-lg border border-gray-200 bg-white p-5 shadow-sm lg:sticky lg:top-28">
           <h2 className="text-xl font-black text-[var(--dark)]">خلاصه پرداخت</h2>
 
+          {isAuthenticated && (
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <label className="block">
+                <span className="text-sm font-black text-[var(--dark)]">کد پیشنهاد</span>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    {...register("coupon_code")}
+                    className={inputClass(false)}
+                    placeholder="کد تخفیف"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void applyCoupon()}
+                    disabled={!preview || !couponCode.trim()}
+                    className="h-12 shrink-0 rounded-lg bg-[var(--secondary)] px-4 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    اعمال
+                  </button>
+                </div>
+              </label>
+              {offer && (
+                <p className="mt-3 text-xs font-black text-green-700">
+                  {offer.offer.title} اعمال شد.
+                </p>
+              )}
+              {offerError && (
+                <p className="mt-3 text-xs font-black text-red-700">{offerError}</p>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 space-y-3 border-b border-gray-100 pb-5 text-sm font-bold text-gray-600">
             <SummaryRow label="جمع کالاها" value={`${formatPrice(preview?.subtotal || 0)} تومان`} />
             <SummaryRow
               label={preview?.delivery_method_title || "هزینه ارسال"}
               value={`${formatPrice(preview?.shipping_cost || 0)} تومان`}
             />
+            {discountAmount > 0 && (
+              <SummaryRow label="تخفیف" value={`${formatPrice(discountAmount)} تومان`} />
+            )}
           </div>
 
           <div className="mt-5 flex items-end justify-between gap-4">
             <span className="text-sm font-bold text-gray-500">مبلغ نهایی</span>
             <span className="text-2xl font-black text-[var(--dark)]">
-              {formatPrice(preview?.total_amount || 0)} تومان
+              {formatPrice(payableTotal)} تومان
             </span>
           </div>
 

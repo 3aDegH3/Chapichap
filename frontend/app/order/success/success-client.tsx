@@ -70,7 +70,7 @@ export default function OrderSuccessClient() {
           <h1 className="text-2xl font-black text-[var(--dark)]">امکان نمایش سفارش نیست</h1>
           <p className="mt-4 leading-7 text-gray-600">{error}</p>
           <Link
-            href="/orders"
+            href="/account/orders"
             className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-[var(--secondary)] px-6 text-sm font-black text-white"
           >
             مشاهده سفارش‌ها
@@ -122,7 +122,7 @@ export default function OrderSuccessClient() {
 
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            href={`/orders/${order.id}`}
+            href={`/account/orders/${order.id}`}
             className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-black text-white transition hover:opacity-90"
           >
             مشاهده جزئیات سفارش

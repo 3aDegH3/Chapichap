@@ -14,7 +14,7 @@ const navItems = [
   { href: "/products", label: "محصولات" },
   { href: "/portfolio", label: "نمونه‌کارها" },
   { href: "/design-request", label: "سفارش طراحی" },
-  { href: "/orders", label: "سفارش‌ها" },
+  { href: "/account/orders", label: "سفارش‌ها" },
   { href: "/about", label: "درباره ما" },
   { href: "/contact", label: "تماس" },
 ];
@@ -137,10 +137,10 @@ export default function Header() {
             ) : isAuthenticated ? (
               <>
                 <Link
-                  href="/profile"
+                  href="/account"
                   className="rounded-full border border-[#FFD100]/60 bg-[#FFD100]/20 px-4 py-2.5 text-sm font-black text-[#1A1A1A] transition duration-300 hover:-translate-y-0.5 hover:bg-[#FFD100]/35"
                 >
-                  {user?.username || "پروفایل"}
+                  {user?.first_name || user?.username || "حساب"}
                 </Link>
 
                 <button
@@ -249,11 +249,11 @@ export default function Header() {
                 ) : isAuthenticated ? (
                   <div className="grid gap-2">
                     <Link
-                      href="/profile"
+                      href="/account"
                       onClick={() => setIsOpen(false)}
                       className="rounded-xl border border-[#FFD100]/60 bg-[#FFD100]/20 px-4 py-3 text-sm font-black text-[#1A1A1A]"
                     >
-                      {user?.username || "پروفایل"}
+                      {user?.first_name || user?.username || "حساب"}
                     </Link>
 
                     <button

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
+import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "ایمیل یا شماره موبایل را وارد کنید."),
@@ -18,13 +20,20 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const fieldLabels: Record<keyof LoginFormValues, string> = {
+  identifier: "ایمیل یا شماره موبایل",
+  password: "رمز عبور",
+};
+
 export default function LoginPage() {
   const { login, error: authError } = useAuth();
+  const searchParams = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,9 +46,28 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     try {
       setServerError(null);
-      await login(values);
-    } catch {
-      setServerError(authError || "ورود ناموفق بود. اطلاعات را بررسی کنید.");
+      await login(values, searchParams.get("next") || "/account");
+    } catch (error) {
+      const fieldErrors = getApiFieldErrors(error);
+      const appliedErrors = Object.entries(fieldErrors).filter(([field]) => field in fieldLabels);
+
+      appliedErrors.forEach(([field, message]) => {
+        setError(field as keyof LoginFormValues, {
+          type: "server",
+          message,
+        });
+      });
+
+      if (appliedErrors.length > 0) {
+        setServerError(
+          `ورود انجام نشد. مشکل در ${appliedErrors
+            .map(([field]) => fieldLabels[field as keyof LoginFormValues])
+            .join("، ")} است.`
+        );
+        return;
+      }
+
+      setServerError(getApiErrorMessage(error) || authError || "ورود ناموفق بود. اطلاعات را بررسی کنید.");
     }
   }
 
@@ -124,15 +152,17 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-sm font-bold text-gray-600">
-              حساب نداری؟{" "}
-              <Link
-                href="/register"
-                className="text-[var(--primary)] hover:underline"
-              >
-                ثبت‌نام کن
+            <div className="mt-6 flex flex-col items-center gap-3 text-sm font-bold text-gray-600 sm:flex-row sm:justify-between">
+              <Link href="/forgot-password" className="text-[var(--secondary)] hover:underline">
+                فراموشی رمز عبور
               </Link>
-            </p>
+              <span>
+                حساب نداری؟{" "}
+                <Link href="/register" className="text-[var(--primary)] hover:underline">
+                  ثبت‌نام کن
+                </Link>
+              </span>
+            </div>
           </div>
         </section>
       </div>

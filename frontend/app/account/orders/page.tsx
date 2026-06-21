@@ -1,0 +1,131 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import Alert from "@/components/ui/Alert";
+import { getApiErrorMessage } from "@/lib/api";
+import { getAccountOrders } from "@/lib/account-api";
+import type { Order } from "@/lib/checkout-api";
+
+function formatPrice(price: number | string) {
+  return new Intl.NumberFormat("fa-IR").format(Number(price) || 0);
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("fa-IR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
+}
+
+export default function AccountOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const timeout = window.setTimeout(() => {
+      async function loadOrders() {
+        setIsLoading(true);
+        setError("");
+
+        try {
+          const data = await getAccountOrders();
+          if (mounted) setOrders(data.orders);
+        } catch (ordersError) {
+          if (mounted) setError(getApiErrorMessage(ordersError));
+        } finally {
+          if (mounted) setIsLoading(false);
+        }
+      }
+
+      void loadOrders();
+    }, 0);
+
+    return () => {
+      mounted = false;
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="h-44 animate-pulse rounded-2xl bg-white" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) return <Alert variant="error">{error}</Alert>;
+
+  if (orders.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+        <h2 className="text-xl font-black text-[var(--dark)]">هنوز سفارشی ثبت نشده</h2>
+        <p className="mx-auto mt-3 max-w-md leading-7 text-gray-600">
+          بعد از ثبت سفارش، وضعیت و جزئیات آن از همین بخش قابل پیگیری است.
+        </p>
+        <Link
+          href="/products"
+          className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-[var(--secondary)] px-6 text-sm font-black text-white"
+        >
+          مشاهده محصولات
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="grid gap-4">
+      {orders.map((order) => (
+        <article key={order.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <Link
+                href={`/account/orders/${order.id}`}
+                className="text-xl font-black text-[var(--dark)] transition hover:text-[var(--primary)]"
+              >
+                {order.order_number}
+              </Link>
+              <p className="mt-2 text-sm font-bold text-gray-500">{formatDate(order.created_at)}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge label={order.status_label} tone="order" />
+              <StatusBadge label={order.payment?.status_label || "بدون پرداخت"} tone="payment" />
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 text-sm font-bold text-gray-600 sm:grid-cols-3">
+            <SummaryPill label="روش پرداخت" value={order.payment?.method_label || "-"} />
+            <SummaryPill label="روش تحویل" value={order.delivery_method_label} />
+            <SummaryPill label="مبلغ نهایی" value={`${formatPrice(order.total_amount)} تومان`} />
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function StatusBadge({ label, tone }: { label: string; tone: "order" | "payment" }) {
+  const classes =
+    tone === "order"
+      ? "border-sky-100 bg-sky-50 text-[var(--secondary)]"
+      : "border-yellow-200 bg-yellow-50 text-yellow-800";
+
+  return <span className={`inline-flex h-9 items-center rounded-full border px-3 text-xs font-black ${classes}`}>{label}</span>;
+}
+
+function SummaryPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-gray-50 px-4 py-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="mt-1 font-black text-[var(--dark)]">{value}</p>
+    </div>
+  );
+}

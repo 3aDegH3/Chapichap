@@ -32,7 +32,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (payload: LoginPayload) => Promise<void>;
+  login: (payload: LoginPayload, redirectTo?: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async function login(payload: LoginPayload) {
+  const login = useCallback(async function login(payload: LoginPayload, redirectTo = "/account") {
     try {
       setError(null);
       setIsLoading(true);
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(response.data.tokens);
       setUser(response.data.user);
 
-      router.push("/");
+      router.push(redirectTo);
     } catch (err) {
       setError(getApiErrorMessage(err));
       throw err;
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(response.data.tokens);
       setUser(response.data.user);
 
-      router.push("/");
+      router.push("/verify-email");
     } catch (err) {
       setError(getApiErrorMessage(err));
       throw err;
