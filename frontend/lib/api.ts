@@ -24,21 +24,34 @@ api.interceptors.request.use((config) => {
 
 export function getApiErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as {
+    const data = error.response?.data;
+
+    if (typeof data === "string") {
+      const normalized = data.trim().toLowerCase();
+
+      if (!normalized) return "خطایی در ارتباط با سرور رخ داد.";
+      if (normalized.startsWith("<!doctype") || normalized.startsWith("<html")) {
+        return "پاسخ نامعتبر از سرور دریافت شد. مسیر API یا اجرای بک‌اند را بررسی کن.";
+      }
+
+      return data.trim();
+    }
+
+    const responseData = data as {
       message?: string;
       errors?: unknown;
       detail?: string;
       [key: string]: unknown;
     };
 
-    if (data?.message) return data.message;
-    if (data?.detail) return data.detail;
-    if (data?.errors && typeof data.errors === "object") {
-      const firstError = Object.values(data.errors as Record<string, unknown>)[0];
+    if (responseData?.message) return responseData.message;
+    if (responseData?.detail) return responseData.detail;
+    if (responseData?.errors && typeof responseData.errors === "object") {
+      const firstError = Object.values(responseData.errors as Record<string, unknown>)[0];
       if (Array.isArray(firstError) && typeof firstError[0] === "string") return firstError[0];
       if (typeof firstError === "string") return firstError;
     }
-    const firstFieldError = Object.values(data || {}).find(
+    const firstFieldError = Object.values(responseData || {}).find(
       (value) => Array.isArray(value) || typeof value === "string"
     );
     if (Array.isArray(firstFieldError) && typeof firstFieldError[0] === "string") {

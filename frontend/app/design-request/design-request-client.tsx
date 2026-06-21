@@ -413,32 +413,51 @@ export default function DesignRequestClient() {
           {step === 2 && (
             <div>
               <StepTitle eyebrow="آپلود فایل" title="فایل مرجع یا طرح را اضافه کن" />
-              <label
+              <div
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
                   const file = event.dataTransfer.files.item(0);
                   if (file) void handleFile(file);
                 }}
-                className="mt-6 flex min-h-64 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-10 text-center transition hover:border-[var(--secondary)] hover:bg-sky-50"
+                className="mt-6 flex min-h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-10 text-center transition hover:border-[var(--secondary)] hover:bg-sky-50"
               >
-                <input
-                  type="file"
-                  className="sr-only"
-                  accept={ALLOWED_FILE_TYPES.join(",")}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void handleFile(file);
-                    event.target.value = "";
-                  }}
-                />
                 <span className="text-lg font-black text-[var(--dark)]">
                   فایل را اینجا رها کن یا انتخاب کن
                 </span>
                 <span className="mt-3 text-sm font-bold text-gray-500">
                   JPG، PNG، WebP، PDF یا ZIP تا ۱۰ مگابایت
                 </span>
-              </label>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full bg-[var(--secondary)] px-6 text-sm font-black text-white transition hover:opacity-90">
+                    انتخاب فایل
+                    <input
+                      type="file"
+                      className="sr-only"
+                      accept={ALLOWED_FILE_TYPES.join(",")}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleFile(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]">
+                    گرفتن عکس
+                    <input
+                      type="file"
+                      className="sr-only"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleFile(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
 
               {isUploading && (
                 <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 p-4 text-sm font-black text-[var(--secondary)]">
