@@ -13,6 +13,8 @@ def validate_upload_file(file):
         "image/jpeg",
         "image/png",
         "image/webp",
+        "image/heic",
+        "image/heif",
         "application/pdf",
         "application/zip",
         "application/x-zip-compressed",

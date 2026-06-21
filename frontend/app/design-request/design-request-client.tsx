@@ -23,6 +23,8 @@ const ALLOWED_FILE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
   "application/pdf",
   "application/zip",
   "application/x-zip-compressed",
@@ -108,21 +110,17 @@ function isImageFile(file: UploadedFileResponse) {
 export default function DesignRequestClient() {
   const searchParams = useSearchParams();
   const productSlug = searchParams.get("product");
-  const [initialDraft] = useState<DraftPayload | null>(readStoredDraft);
 
   const [step, setStep] = useState(0);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
-    initialDraft?.selectedProduct || null
-  );
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productError, setProductError] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<UploadedFileResponse | null>(
-    initialDraft?.uploadedFile || null
-  );
+  const [uploadedFile, setUploadedFile] = useState<UploadedFileResponse | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdRequest, setCreatedRequest] = useState<DesignRequest | null>(null);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
 
   const {
     register,
@@ -130,12 +128,13 @@ export default function DesignRequestClient() {
     formState: { errors, isSubmitting },
     getValues,
     handleSubmit,
+    reset,
     setValue,
     trigger,
   } = useForm<DesignRequestFormValues>({
     resolver: zodResolver(designRequestSchema),
     mode: "onChange",
-    defaultValues: { ...defaultValues, ...initialDraft?.values },
+    defaultValues,
   });
 
   const watchedValues = useWatch({ control });
@@ -146,6 +145,22 @@ export default function DesignRequestClient() {
     const value = watchedValues.order_type || defaultValues.order_type;
     return orderTypes.find((item) => item.value === value) || orderTypes[0];
   }, [watchedValues.order_type]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const draft = readStoredDraft();
+
+      if (draft) {
+        reset({ ...defaultValues, ...draft.values });
+        setUploadedFile(draft.uploadedFile);
+        setSelectedProduct(draft.selectedProduct);
+      }
+
+      setHasLoadedDraft(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [reset]);
 
   useEffect(() => {
     if (!productSlug) return;
@@ -173,7 +188,7 @@ export default function DesignRequestClient() {
   }, [productSlug, setValue]);
 
   useEffect(() => {
-    if (createdRequest) return;
+    if (!hasLoadedDraft || createdRequest) return;
 
     const draft: DraftPayload = {
       values: { ...defaultValues, ...watchedValues } as DesignRequestFormValues,
@@ -182,7 +197,7 @@ export default function DesignRequestClient() {
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [createdRequest, selectedProduct, uploadedFile, watchedValues]);
+  }, [createdRequest, hasLoadedDraft, selectedProduct, uploadedFile, watchedValues]);
 
   useEffect(() => {
     return () => {
@@ -204,7 +219,7 @@ export default function DesignRequestClient() {
 
   function validateFile(file: File) {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return "فرمت فایل مجاز نیست. JPG، PNG، WebP، PDF یا ZIP ارسال کن.";
+      return "فرمت فایل مجاز نیست. JPG، PNG، WebP، HEIC، PDF یا ZIP ارسال کن.";
     }
 
     if (file.size > MAX_FILE_SIZE) {
