@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
 export default function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { totalItems } = useCart();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -34,10 +36,6 @@ export default function Header() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   return (
     <header
@@ -123,8 +121,13 @@ export default function Header() {
               href="/cart"
               className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-sky-200 bg-sky-50/80 px-4 py-2.5 text-sm font-black text-[#0090C8] transition duration-300 hover:-translate-y-0.5 hover:border-[#00AEEF] hover:bg-white hover:text-[#00AEEF] hover:shadow-[0_10px_24px_-8px_rgba(0,174,239,0.5)]"
             >
-              <span className="text-base leading-none">🛒</span>
+              <span className="text-base leading-none">سبد</span>
               <span className="relative z-10">سبد خرید</span>
+              {totalItems > 0 && (
+                <span className="relative z-10 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--primary)] px-1 text-[11px] text-white">
+                  {totalItems.toLocaleString("fa-IR")}
+                </span>
+              )}
               <span className="absolute -right-6 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full bg-[#00AEEF]/15 transition duration-500 group-hover:scale-[2.4]" />
             </Link>
 
@@ -214,6 +217,7 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setIsOpen(false)}
                     className={cn(
                       "rounded-xl px-4 py-3 text-sm font-black text-gray-700 transition hover:bg-sky-50 hover:text-[#00AEEF]",
                       isActive &&
@@ -227,10 +231,15 @@ export default function Header() {
 
               <Link
                 href="/cart"
-                className="mt-1 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-sm font-black text-[#0090C8]"
+                onClick={() => setIsOpen(false)}
+                className="mt-1 flex items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-sm font-black text-[#0090C8]"
               >
-                <span>🛒</span>
-                سبد خرید
+                <span>سبد خرید</span>
+                {totalItems > 0 && (
+                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--primary)] px-1.5 text-xs text-white">
+                    {totalItems.toLocaleString("fa-IR")}
+                  </span>
+                )}
               </Link>
 
               <div className="mt-3 border-t border-sky-100 pt-3">
@@ -240,6 +249,7 @@ export default function Header() {
                   <div className="grid gap-2">
                     <Link
                       href="/profile"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl border border-[#FFD100]/60 bg-[#FFD100]/20 px-4 py-3 text-sm font-black text-[#1A1A1A]"
                     >
                       {user?.username || "پروفایل"}
@@ -260,6 +270,7 @@ export default function Header() {
                   <div className="grid gap-2">
                     <Link
                       href="/login"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl bg-sky-50 px-4 py-3 text-center text-sm font-black text-[#00AEEF]"
                     >
                       ورود
@@ -267,6 +278,7 @@ export default function Header() {
 
                     <Link
                       href="/register"
+                      onClick={() => setIsOpen(false)}
                       className="rounded-xl bg-gradient-to-l from-[#00AEEF] to-[#0090C8] px-4 py-3 text-center text-sm font-black text-white shadow-[0_10px_24px_-6px_rgba(0,174,239,0.6)]"
                     >
                       ثبت‌نام
