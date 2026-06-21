@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -6,8 +7,15 @@ from rest_framework.views import APIView
 
 from apps.products.models import Product
 
-from .models import Cart, CartItem
-from .serializers import CartSerializer
+from .models import Cart, CartItem, Order
+from .serializers import (
+    CartSerializer,
+    CheckoutPreviewRequestSerializer,
+    CheckoutPreviewSerializer,
+    OrderCreateSerializer,
+    OrderSerializer,
+)
+from .services import calculate_checkout_preview, create_order_from_cart
 
 
 def parse_positive_int(value, default=1):
@@ -88,3 +96,71 @@ class CartRemoveAPIView(APIView):
         cart = get_or_create_cart(request)
         CartItem.objects.filter(cart=cart, product_id=product_id).delete()
         return Response(CartSerializer(cart, context={"request": request}).data)
+
+
+class CheckoutPreviewAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = CheckoutPreviewRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = get_or_create_cart(request)
+
+        try:
+            preview = calculate_checkout_preview(
+                cart,
+                delivery_method=serializer.validated_data["delivery_method"],
+            )
+        except ValidationError as error:
+            return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CheckoutPreviewSerializer(preview, context={"request": request}).data)
+
+
+def get_order_queryset_for_request(request):
+    queryset = Order.objects.prefetch_related("items", "payments")
+
+    if request.user.is_authenticated:
+        return queryset.filter(user=request.user)
+
+    if not request.session.session_key:
+        return queryset.none()
+
+    return queryset.filter(session_key=request.session.session_key)
+
+
+class OrderListCreateAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        queryset = get_order_queryset_for_request(request)
+        return Response(
+            OrderSerializer(queryset, many=True, context={"request": request}).data
+        )
+
+    def post(self, request):
+        serializer = OrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = get_or_create_cart(request)
+
+        try:
+            order = create_order_from_cart(
+                cart,
+                serializer.validated_data,
+                user=request.user,
+            )
+        except ValidationError as error:
+            return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            OrderSerializer(order, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class OrderDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        order = get_object_or_404(get_order_queryset_for_request(request), pk=pk)
+        return Response(OrderSerializer(order, context={"request": request}).data)

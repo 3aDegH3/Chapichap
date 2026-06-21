@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/products/", include("apps.products.urls")),
     path("api/v1/", include("apps.orders.urls")),
+    path("api/v1/", include("apps.payments.urls")),
     path("api/v1/", include("apps.design_request.urls")),
     path("api/v1/categories/", CategoryListAPIView.as_view(), name="category-list"),
     path("api/v1/search/", ProductSearchAPIView.as_view(), name="product-search"),
