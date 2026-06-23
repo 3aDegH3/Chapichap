@@ -12,17 +12,17 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--primary)] text-white shadow-lg shadow-pink-900/20 hover:opacity-90",
+    "bg-[var(--secondary)] text-[var(--dark)] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] hover:bg-[var(--primary)]",
   secondary:
-    "bg-[var(--secondary)] text-white shadow-lg shadow-sky-900/20 hover:opacity-90",
+    "bg-[var(--dark)] text-white shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] hover:bg-[#1f1e1d]",
   accent:
-    "bg-[var(--accent)] text-[var(--dark)] shadow-lg shadow-yellow-900/10 hover:opacity-90",
+    "bg-[var(--accent)] text-[var(--dark)] shadow-[0_12px_26px_-22px_rgba(51,50,48,0.7)] hover:bg-[#f6f1e8]",
   dark:
-    "bg-[var(--dark)] text-white shadow-lg shadow-black/20 hover:opacity-90",
+    "bg-[var(--dark)] text-white shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] hover:bg-[#1f1e1d]",
   outline:
-    "border border-gray-200 bg-white text-[var(--dark)] hover:border-[var(--primary)] hover:bg-pink-50 hover:text-[var(--primary)]",
+    "border border-[#E3DED5] bg-white text-[var(--dark)] hover:border-[var(--secondary)] hover:bg-[#F6F1E8]",
   ghost:
-    "bg-transparent text-[var(--dark)] hover:bg-gray-100",
+    "bg-transparent text-[var(--dark)] hover:bg-[#F2EEE6]",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -43,7 +43,7 @@ export default function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-2xl font-black transition duration-200 hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center rounded-xl font-black transition duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60",
         variants[variant],
         sizes[size],
         className

@@ -101,7 +101,7 @@ export default function AccountTicketDetailPage() {
     return (
       <div className="space-y-5">
         <Alert variant="error">{error}</Alert>
-        <Link href="/account/tickets" className="inline-flex h-12 items-center justify-center rounded-2xl bg-[var(--secondary)] px-6 text-sm font-black text-white">
+        <Link href="/account/tickets" className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230]">
           بازگشت به تیکت‌ها
         </Link>
       </div>
@@ -114,14 +114,14 @@ export default function AccountTicketDetailPage() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-black text-[var(--secondary)]">تیکت #{ticket.id.toLocaleString("fa-IR")}</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--dark)]">{ticket.subject}</h2>
-            <p className="mt-2 text-sm font-bold text-gray-500">{formatDate(ticket.created_at)}</p>
+            <p className="text-sm font-black text-[#B2894C]">تیکت #{ticket.id.toLocaleString("fa-IR")}</p>
+            <h2 className="mt-2 text-2xl font-black text-[#333230]">{ticket.subject}</h2>
+            <p className="mt-2 text-sm font-bold text-[#77736D]">{formatDate(ticket.created_at)}</p>
           </div>
-          <Link href="/account/tickets" className="text-sm font-black text-gray-500">
+          <Link href="/account/tickets" className="text-sm font-black text-[#77736D] hover:text-[#B2894C]">
             بازگشت
           </Link>
         </div>
@@ -134,14 +134,14 @@ export default function AccountTicketDetailPage() {
             <article
               key={item.id}
               className={`rounded-2xl p-4 ${
-                item.is_staff_message ? "border border-sky-100 bg-sky-50" : "border border-gray-200 bg-gray-50"
+                item.is_staff_message ? "border border-[#D2AD70]/35 bg-[#F6F1E8]" : "border border-[#E3DED5] bg-[#FAFAF8]"
               }`}
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-black text-[var(--dark)]">{item.sender_name}</p>
-                <p className="text-xs font-bold text-gray-500">{formatDate(item.created_at)}</p>
+                <p className="font-black text-[#333230]">{item.sender_name}</p>
+                <p className="text-xs font-bold text-[#77736D]">{formatDate(item.created_at)}</p>
               </div>
-              <p className="mt-3 whitespace-pre-wrap text-sm font-bold leading-7 text-gray-700">{item.message}</p>
+              <p className="mt-3 whitespace-pre-wrap text-sm font-bold leading-7 text-[#77736D]">{item.message}</p>
               {item.attachments.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {item.attachments.map((attachment) => (
@@ -150,7 +150,7 @@ export default function AccountTicketDetailPage() {
                       href={attachment.file_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-black text-[var(--dark)]"
+                      className="rounded-xl border border-[#E3DED5] bg-white px-3 py-2 text-xs font-black text-[#333230]"
                     >
                       {attachment.filename}
                     </a>
@@ -162,12 +162,12 @@ export default function AccountTicketDetailPage() {
         </div>
 
         {!isClosed && (
-          <form onSubmit={handleSubmit(submit)} className="mt-6 border-t border-gray-100 pt-6">
+          <form onSubmit={handleSubmit(submit)} className="mt-6 border-t border-[#E3DED5] pt-6">
             <label className="block">
-              <span className="text-sm font-black text-[var(--dark)]">پاسخ جدید</span>
+              <span className="text-sm font-black text-[#333230]">پاسخ جدید</span>
               <textarea
                 rows={5}
-                className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium leading-7 outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-pink-100"
+                className="mt-2 w-full rounded-2xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-medium leading-7 outline-none focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
                 {...register("message")}
               />
               {errors.message?.message && <span className="mt-2 block text-xs font-bold text-red-600">{errors.message.message}</span>}
@@ -176,7 +176,7 @@ export default function AccountTicketDetailPage() {
             <input
               type="file"
               multiple
-              className="mt-4 block w-full text-sm font-bold text-gray-600"
+              className="mt-4 block w-full text-sm font-bold text-[#77736D]"
               onChange={(event) => setFiles(Array.from(event.target.files || []))}
             />
 
@@ -192,9 +192,9 @@ export default function AccountTicketDetailPage() {
         )}
       </section>
 
-      <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-5 shadow-sm xl:sticky xl:top-28">
-        <h2 className="text-xl font-black text-[var(--dark)]">مشخصات</h2>
-        <div className="mt-5 grid gap-3 text-sm font-bold text-gray-600">
+      <aside className="h-fit rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm xl:sticky xl:top-28">
+        <h2 className="text-xl font-black text-[#333230]">مشخصات</h2>
+        <div className="mt-5 grid gap-3 text-sm font-bold text-[#77736D]">
           <InfoPill label="وضعیت" value={ticket.status_label} />
           <InfoPill label="دسته‌بندی" value={ticket.category_label} />
           <InfoPill label="اولویت" value={ticket.priority_label} />
@@ -208,9 +208,9 @@ export default function AccountTicketDetailPage() {
 
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 px-4 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 break-words font-black text-[var(--dark)]">{value}</p>
+    <div className="rounded-xl bg-[#FAFAF8] px-4 py-3">
+      <p className="text-xs text-[#77736D]">{label}</p>
+      <p className="mt-1 break-words font-black text-[#333230]">{value}</p>
     </div>
   );
 }

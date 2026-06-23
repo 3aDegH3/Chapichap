@@ -32,10 +32,10 @@ export default function AccountShell({ children }: { children: ReactNode }) {
 
   if (isLoading || !user) {
     return (
-      <main className="min-h-[calc(100vh-64px)] bg-gray-50 px-4 py-10">
+      <main className="min-h-[calc(100vh-64px)] bg-[#FAFAF8] px-4 py-10">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[260px_1fr]">
-          <div className="h-96 animate-pulse rounded-2xl bg-white" />
-          <div className="h-[520px] animate-pulse rounded-2xl bg-white" />
+          <div className="h-96 animate-pulse rounded-2xl border border-[#E3DED5] bg-white" />
+          <div className="h-[520px] animate-pulse rounded-2xl border border-[#E3DED5] bg-white" />
         </div>
       </main>
     );
@@ -44,14 +44,14 @@ export default function AccountShell({ children }: { children: ReactNode }) {
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "کاربر چاپی‌چاپ";
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-50">
-      <section className="border-b border-gray-100 bg-white">
+    <main className="min-h-[calc(100vh-64px)] bg-[#FAFAF8]">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <p className="text-sm font-black text-[var(--secondary)]">حساب کاربری</p>
+          <p className="text-sm font-black text-[#B2894C]">حساب کاربری</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black text-[var(--dark)]">{displayName}</h1>
-              <p className="mt-2 text-sm font-bold text-gray-500">{user.email}</p>
+              <h1 className="text-3xl font-black text-[#333230]">{displayName}</h1>
+              <p className="mt-2 text-sm font-bold text-[#77736D]">{user.email}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <StatusPill active={user.email_verified} label={user.email_verified ? "ایمیل تایید شده" : "ایمیل تایید نشده"} />
@@ -62,7 +62,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-8">
-        <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:sticky lg:top-28">
+        <aside className="h-fit rounded-2xl border border-[#E3DED5] bg-white p-3 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] lg:sticky lg:top-28">
           <nav className="grid gap-1">
             {navItems.map((item) => {
               const isActive = item.href === "/account" ? pathname === item.href : pathname.startsWith(item.href);
@@ -71,8 +71,8 @@ export default function AccountShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-xl px-4 py-3 text-sm font-black text-gray-600 transition hover:bg-sky-50 hover:text-[var(--secondary)]",
-                    isActive && "bg-sky-50 text-[var(--secondary)]"
+                    "rounded-xl px-4 py-3 text-sm font-black text-[#77736D] transition hover:bg-[#F6F1E8] hover:text-[#333230]",
+                    isActive && "border border-[#D2AD70]/55 bg-[#F6F1E8] text-[#333230]"
                   )}
                 >
                   {item.label}
@@ -89,7 +89,7 @@ export default function AccountShell({ children }: { children: ReactNode }) {
 
 function StatusPill({ active, label }: { active: boolean; label: string }) {
   return (
-    <span className={cn("inline-flex h-9 items-center rounded-full border px-3 text-xs font-black", active ? "border-green-200 bg-green-50 text-green-700" : "border-yellow-200 bg-yellow-50 text-yellow-800")}>
+    <span className={cn("inline-flex h-9 items-center rounded-lg border px-3 text-xs font-black", active ? "border-green-200 bg-green-50 text-green-700" : "border-[#D2AD70]/45 bg-[#F6F1E8] text-[#B2894C]")}>
       {label}
     </span>
   );

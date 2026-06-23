@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const services = [
@@ -5,79 +6,75 @@ const services = [
   "چاپ روی ماگ",
   "قاب موبایل",
   "چاپ روی کوسن",
-  "پرینتر سه‌بعدی",
+  "هدیه اختصاصی",
 ];
 
 const quickLinks = [
   { href: "/", label: "خانه" },
-  { href: "/products", label: "محصولات" },
+  { href: "/products", label: "فروشگاه" },
   { href: "/portfolio", label: "نمونه‌کارها" },
-  { href: "/design-request", label: "سفارش طراحی" },
+  { href: "/design-request", label: "سفارش چاپ دلخواه" },
+  { href: "/cart", label: "سبد خرید" },
 ];
 
 const supportLinks = [
-  { href: "/faq", label: "سوالات متداول" },
-  { href: "/about", label: "درباره ما" },
-  { href: "/contact", label: "تماس با ما" },
   { href: "/account", label: "حساب کاربری" },
+  { href: "/account/orders", label: "پیگیری سفارش" },
+  { href: "/account/tickets", label: "پشتیبانی سفارش" },
+  { href: "/account/profile", label: "اطلاعات کاربری" },
 ];
 
 const features = [
-  { icon: "🛡️", label: "چاپ باکیفیت" },
-  { icon: "🎨", label: "طراحی اختصاصی" },
-  { icon: "🚚", label: "ارسال سریع" },
-  { icon: "⭐", label: "رضایت مشتریان" },
-  { icon: "💬", label: "پشتیبانی پاسخگو" },
+  { value: "01", label: "چاپ باکیفیت و ماندگار" },
+  { value: "02", label: "طراحی مطابق ایده شما" },
+  { value: "03", label: "سفارش تکی و عمده" },
+  { value: "04", label: "بسته‌بندی مناسب هدیه" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-sky-100 bg-white">
-      {/* Bottom gradient ribbon — mirrors the header (blue dominant) */}
-      <div className="absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-l from-[#00AEEF] via-[#0090C8] to-[#00AEEF]" />
-      <div className="absolute inset-x-0 bottom-[3px] h-px bg-gradient-to-l from-transparent via-[#E6007E]/30 to-transparent" />
+    <footer className="relative overflow-hidden border-t border-[#E3DED5] bg-[#F2EEE6]">
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-l from-[#333230] via-[#D2AD70] to-[#333230]" />
 
-      {/* Ambient blue glows */}
-      <div className="pointer-events-none absolute -left-20 -top-10 h-44 w-44 rounded-full bg-[#00AEEF]/12 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 top-20 h-40 w-40 rounded-full bg-[#00AEEF]/10 blur-3xl" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 rounded-full bg-[#FFD100]/10 blur-2xl" />
-
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[2rem] border border-sky-200/70 bg-gradient-to-br from-sky-50/80 via-white to-sky-50/50 p-6 shadow-[0_18px_50px_-20px_rgba(0,174,239,0.35)] sm:p-8">
-          <div className="grid gap-10 md:grid-cols-4">
-            {/* ===== Brand ===== */}
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-[1.1rem] border border-sky-200 bg-gradient-to-br from-[#00AEEF] to-[#0090C8] shadow-[0_10px_28px_-8px_rgba(0,174,239,0.6)] sm:h-16 sm:w-16">
-                  <span className="text-2xl font-black text-white drop-shadow">
-                    چ
-                  </span>
-
-                  <span className="absolute -bottom-1.5 -left-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#FFD100] text-[10px] font-black text-[#1A1A1A] shadow-md">
-                    ★
-                  </span>
+      <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8] shadow-[0_24px_70px_-42px_rgba(51,50,48,0.65)]">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.45fr)]">
+            <div className="border-b border-[#E3DED5] p-6 sm:p-8 lg:border-b-0 lg:border-l">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-4"
+                aria-label="Chapi Chap"
+              >
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white shadow-[0_16px_34px_-24px_rgba(51,50,48,0.75)]">
+                  <Image
+                    src="/brand/logo.png"
+                    alt="لوگوی چاپی چاپ"
+                    width={160}
+                    height={160}
+                    className="h-full w-full object-contain"
+                  />
                 </div>
 
                 <div>
-                  <p className="text-xl font-black tracking-tight text-[#1A1A1A] sm:text-2xl">
-                    Chapi chap
+                  <p className="text-2xl font-black text-[#333230]">
+                    چاپی چاپ
                   </p>
-                  <p className="mt-0.5 text-xs font-black text-[#00AEEF] sm:text-sm">
-                    خدمات چاپ و هدایای اختصاصی
+                  <p className="mt-1 text-sm font-black text-[#B2894C]">
+                    طراحی، چاپ، هدیه
                   </p>
                 </div>
-              </div>
+              </Link>
 
-              <p className="mt-5 max-w-xl text-sm font-medium leading-8 text-gray-600">
-                چاپی‌چاپ جاییه که طرح، رنگ و ایده‌های شخصی تبدیل به هدیه‌های خاص
-                می‌شن؛ از ماگ و تیشرت تا قاب موبایل، کوسن و محصولات سفارشی.
+              <p className="mt-6 max-w-xl text-sm font-medium leading-8 text-[#77736D]">
+                ایده‌ات را بفرست؛ ما آن را روی تیشرت، ماگ، قاب و هدیه‌ای
+                ماندگار با جزئیات تمیز و بسته‌بندی شایسته اجرا می‌کنیم.
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap gap-2">
                 {services.map((service) => (
                   <span
                     key={service}
-                    className="rounded-full border border-sky-200/80 bg-white px-3 py-1.5 text-xs font-black text-[#0090C8] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#00AEEF] hover:text-[#00AEEF] hover:shadow-[0_8px_18px_-6px_rgba(0,174,239,0.4)]"
+                    className="rounded-lg border border-[#E3DED5] bg-white px-3 py-1.5 text-xs font-black text-[#333230] transition duration-300 hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
                   >
                     {service}
                   </span>
@@ -85,68 +82,97 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* ===== Quick Links ===== */}
-            <div>
-              <p className="inline-flex items-center rounded-full border border-sky-200/80 bg-gradient-to-l from-[#00AEEF] to-[#0090C8] px-4 py-2 text-sm font-black text-white shadow-[0_8px_20px_-6px_rgba(0,174,239,0.55)]">
-                دسترسی سریع
-              </p>
+            <div className="p-6 sm:p-8">
+              <div className="grid gap-8 sm:grid-cols-2">
+                <div>
+                  <p className="border-b border-[#E3DED5] pb-3 text-sm font-black text-[#333230]">
+                    مسیرهای اصلی
+                  </p>
 
-              <div className="mt-5 grid gap-1 text-sm font-bold text-gray-600">
-                {quickLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 rounded-lg px-2 py-1.5 transition duration-300 hover:bg-sky-50 hover:text-[#00AEEF]"
-                  >
-                    <span className="h-1 w-1 rounded-full bg-[#00AEEF]/40 transition duration-300 group-hover:w-3 group-hover:bg-[#00AEEF]" />
-                    {link.label}
-                  </Link>
-                ))}
+                  <div className="mt-4 grid gap-1 text-sm font-bold text-[#77736D]">
+                    {quickLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="group inline-flex items-center justify-between rounded-lg px-2 py-2 transition duration-300 hover:bg-[#F6F1E8] hover:text-[#333230]"
+                      >
+                        <span>{link.label}</span>
+                        <span className="h-px w-6 bg-[#D2AD70]/55 transition duration-300 group-hover:w-10 group-hover:bg-[#B2894C]" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="border-b border-[#E3DED5] pb-3 text-sm font-black text-[#333230]">
+                    خدمات مشتریان
+                  </p>
+
+                  <div className="mt-4 grid gap-1 text-sm font-bold text-[#77736D]">
+                    {supportLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="group inline-flex items-center justify-between rounded-lg px-2 py-2 transition duration-300 hover:bg-[#F6F1E8] hover:text-[#333230]"
+                      >
+                        <span>{link.label}</span>
+                        <span className="h-px w-6 bg-[#D2AD70]/55 transition duration-300 group-hover:w-10 group-hover:bg-[#B2894C]" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* ===== Support Links ===== */}
-            <div>
-              <p className="inline-flex items-center rounded-full border border-sky-200/80 bg-white px-4 py-2 text-sm font-black text-[#00AEEF] shadow-[0_8px_20px_-10px_rgba(0,174,239,0.4)]">
-                پشتیبانی
-              </p>
+              <div className="mt-8 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-base font-black text-[#333230]">
+                      سفارش اختصاصی داری؟
+                    </p>
+                    <p className="mt-2 text-sm font-medium leading-7 text-[#77736D]">
+                      طرح، مناسبت یا محصولت را بفرست تا مسیر چاپ را دقیق شروع
+                      کنیم.
+                    </p>
+                  </div>
 
-              <div className="mt-5 grid gap-1 text-sm font-bold text-gray-600">
-                {supportLinks.map((link) => (
                   <Link
-                    key={link.href}
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 rounded-lg px-2 py-1.5 transition duration-300 hover:bg-sky-50 hover:text-[#00AEEF]"
+                    href="/design-request"
+                    className="inline-flex h-11 items-center justify-center rounded-lg border border-[#D2AD70] bg-white px-5 text-sm font-black text-[#333230] shadow-[0_12px_26px_-22px_rgba(51,50,48,0.7)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#D2AD70]/18"
                   >
-                    <span className="h-1 w-1 rounded-full bg-[#00AEEF]/40 transition duration-300 group-hover:w-3 group-hover:bg-[#00AEEF]" />
-                    {link.label}
+                    شروع سفارش
                   </Link>
-                ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ===== Feature Strip ===== */}
-          <div className="mt-8 grid gap-3 border-t border-sky-100 pt-6 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid border-t border-[#E3DED5] sm:grid-cols-2 lg:grid-cols-4">
             {features.map((item) => (
               <div
                 key={item.label}
-                className="group flex items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white px-3 py-3 text-xs font-black text-[#1A1A1A] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#00AEEF] hover:shadow-[0_10px_22px_-8px_rgba(0,174,239,0.4)]"
+                className="border-b border-[#E3DED5] px-5 py-4 sm:border-l lg:border-b-0"
               >
-                <span className="text-base transition duration-300 group-hover:scale-110">
-                  {item.icon}
-                </span>
-                {item.label}
+                <p className="text-xs font-black text-[#B2894C]">
+                  {Number(item.value).toLocaleString("fa-IR", {
+                    minimumIntegerDigits: 2,
+                  })}
+                </p>
+                <p className="mt-2 text-sm font-black leading-7 text-[#333230]">
+                  {item.label}
+                </p>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* ===== Copyright ===== */}
-        <div className="py-5 text-center text-xs font-bold text-gray-500">
-          © تمام حقوق برای{" "}
-          <span className="font-black text-[#00AEEF]">Chapi chap</span> محفوظ
-          است.
+          <div className="flex flex-col gap-3 border-t border-[#E3DED5] px-5 py-4 text-xs font-bold text-[#77736D] sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © تمام حقوق برای{" "}
+              <span className="font-black text-[#333230]">چاپی چاپ</span>{" "}
+              محفوظ است.
+            </p>
+
+            <p className="text-[#B2894C]">هدیه‌ای شخصی، چاپی تمیز، تجربه‌ای ماندگار</p>
+          </div>
         </div>
       </div>
     </footer>

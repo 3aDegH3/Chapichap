@@ -45,6 +45,11 @@ class CheckoutPreviewRequestSerializer(serializers.Serializer):
         default=DeliveryMethod.SHIPPING,
         required=False,
     )
+    items = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True,
+    )
 
 
 class CheckoutPreviewItemSerializer(serializers.Serializer):
@@ -206,6 +211,11 @@ class OrderCreateSerializer(serializers.Serializer):
     save_address = serializers.BooleanField(required=False, default=False)
     address_title = serializers.CharField(required=False, allow_blank=True, max_length=120)
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=60)
+    items = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True,
+    )
 
     def validate(self, attrs):
         request = self.context.get("request")

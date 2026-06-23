@@ -28,7 +28,7 @@ export default function Pagination({
         type="button"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-11 rounded-xl border border-[#E3DED5] px-4 text-sm font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] disabled:cursor-not-allowed disabled:opacity-40"
       >
         قبلی
       </button>
@@ -38,7 +38,7 @@ export default function Pagination({
           return (
             <span
               key={item}
-              className="flex h-11 min-w-11 items-center justify-center rounded-full text-sm font-black text-gray-400"
+              className="flex h-11 min-w-11 items-center justify-center rounded-xl text-sm font-black text-[#77736D]"
             >
               ...
             </span>
@@ -52,10 +52,10 @@ export default function Pagination({
             onClick={() => onPageChange(item)}
             aria-current={item === page ? "page" : undefined}
             className={[
-              "h-11 min-w-11 rounded-full px-3 text-sm font-black transition",
+              "h-11 min-w-11 rounded-xl px-3 text-sm font-black transition",
               item === page
-                ? "bg-[var(--dark)] text-white"
-                : "border border-gray-200 bg-white text-gray-700 hover:border-[var(--secondary)]",
+                ? "border border-[#D2AD70] bg-[#F6F1E8] text-[#333230]"
+                : "border border-[#E3DED5] bg-white text-[#77736D] hover:border-[#D2AD70] hover:bg-[#F6F1E8]",
             ].join(" ")}
           >
             {item.toLocaleString("fa-IR")}
@@ -67,7 +67,7 @@ export default function Pagination({
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className="h-11 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-11 rounded-xl border border-[#E3DED5] px-4 text-sm font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] disabled:cursor-not-allowed disabled:opacity-40"
       >
         بعدی
       </button>

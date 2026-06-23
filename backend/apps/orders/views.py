@@ -37,6 +37,47 @@ def get_or_create_cart(request):
     return cart
 
 
+def parse_cart_payload_items(raw_items):
+    parsed_items = {}
+
+    for item in raw_items or []:
+        try:
+            product_id = int(item.get("product_id"))
+        except (AttributeError, TypeError, ValueError):
+            continue
+
+        quantity = parse_positive_int(item.get("quantity", 1))
+        parsed_items[product_id] = parsed_items.get(product_id, 0) + quantity
+
+    return parsed_items
+
+
+def sync_cart_from_payload(cart, raw_items):
+    parsed_items = parse_cart_payload_items(raw_items)
+    if not parsed_items:
+        return cart
+
+    products = {
+        product.id: product
+        for product in Product.objects.filter(id__in=parsed_items.keys(), is_active=True)
+    }
+
+    cart.items.exclude(product_id__in=products.keys()).delete()
+
+    for product_id, quantity in parsed_items.items():
+        product = products.get(product_id)
+        if not product:
+            continue
+
+        CartItem.objects.update_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": quantity},
+        )
+
+    return cart
+
+
 class CartAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -105,6 +146,7 @@ class CheckoutPreviewAPIView(APIView):
         serializer = CheckoutPreviewRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         cart = get_or_create_cart(request)
+        sync_cart_from_payload(cart, serializer.validated_data.get("items"))
 
         try:
             preview = calculate_checkout_preview(
@@ -142,6 +184,7 @@ class OrderListCreateAPIView(APIView):
         serializer = OrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         cart = get_or_create_cart(request)
+        sync_cart_from_payload(cart, serializer.validated_data.get("items"))
 
         try:
             order = create_order_from_cart(
