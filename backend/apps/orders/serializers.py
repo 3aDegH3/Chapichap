@@ -45,6 +45,11 @@ class CheckoutPreviewRequestSerializer(serializers.Serializer):
         default=DeliveryMethod.SHIPPING,
         required=False,
     )
+    items = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True,
+    )
 
 
 class CheckoutPreviewItemSerializer(serializers.Serializer):
@@ -176,6 +181,10 @@ class OrderSerializer(serializers.ModelSerializer):
             "status": payment.status,
             "status_label": payment.get_status_display(),
             "provider": payment.provider,
+            "provider_reference": payment.provider_reference,
+            "tracking_code": payment.tracking_code,
+            "receipt_number": payment.receipt_number,
+            "failure_reason": payment.failure_reason,
             "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
             "created_at": payment.created_at.isoformat(),
         }
@@ -186,6 +195,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderCreateSerializer(serializers.Serializer):
+    idempotency_key = serializers.CharField(required=False, allow_blank=True, max_length=120)
     address_id = serializers.IntegerField(required=False, allow_null=True)
     receiver_name = serializers.CharField(max_length=150, min_length=2, required=False)
     phone = serializers.RegexField(
@@ -206,6 +216,11 @@ class OrderCreateSerializer(serializers.Serializer):
     save_address = serializers.BooleanField(required=False, default=False)
     address_title = serializers.CharField(required=False, allow_blank=True, max_length=120)
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=60)
+    items = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        allow_empty=True,
+    )
 
     def validate(self, attrs):
         request = self.context.get("request")

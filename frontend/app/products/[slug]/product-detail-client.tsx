@@ -50,13 +50,13 @@ export default function ProductDetailClient() {
 
   if (error || !product) {
     return (
-      <main className="bg-white">
+      <main className="bg-[#FAFAF8]">
         <section className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-black text-[var(--dark)]">محصول پیدا نشد</h1>
-          <p className="mt-4 leading-7 text-gray-600">{error}</p>
+          <h1 className="text-2xl font-black text-[#333230]">محصول پیدا نشد</h1>
+          <p className="mt-4 leading-7 text-[#77736D]">{error}</p>
           <Link
             href="/products"
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-[var(--dark)] px-6 text-sm font-black text-white transition hover:bg-[var(--primary)]"
+            className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition hover:bg-[#B2894C]"
           >
             برگشت به محصولات
           </Link>
@@ -66,11 +66,11 @@ export default function ProductDetailClient() {
   }
 
   return (
-    <main className="bg-white pb-24 md:pb-0">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-sky-50/80 to-white">
+    <main className="bg-[#FAFAF8] pb-24 md:pb-0">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-500">
-            <Link href="/products" className="transition hover:text-[var(--secondary)]">
+          <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#77736D]">
+            <Link href="/products" className="transition hover:text-[#B2894C]">
               محصولات
             </Link>
             <span>/</span>
@@ -78,14 +78,14 @@ export default function ProductDetailClient() {
               <>
                 <Link
                   href={`/products?category=${product.category.slug}`}
-                  className="transition hover:text-[var(--secondary)]"
+                  className="transition hover:text-[#B2894C]"
                 >
                   {product.category.title}
                 </Link>
                 <span>/</span>
               </>
             )}
-            <span className="text-[var(--dark)]">{product.title}</span>
+            <span className="text-[#333230]">{product.title}</span>
           </div>
         </div>
       </section>
@@ -95,25 +95,25 @@ export default function ProductDetailClient() {
 
         <div className="lg:sticky lg:top-28 lg:h-fit">
           {product.category && (
-            <span className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-sm font-black text-[var(--secondary)]">
+            <span className="inline-flex rounded-full border border-[#D2AD70]/35 bg-[#F6F1E8] px-4 py-2 text-sm font-black text-[#B2894C]">
               {product.category.title}
             </span>
           )}
 
-          <h1 className="mt-5 text-3xl font-black leading-tight text-[var(--dark)] sm:text-4xl">
+          <h1 className="mt-5 text-3xl font-black leading-tight text-[#333230] sm:text-4xl">
             {product.title}
           </h1>
 
-          <p className="mt-5 text-base leading-8 text-gray-600">
+          <p className="mt-5 text-base leading-8 text-[#77736D]">
             {product.short_description ||
               "محصول اختصاصی برای هدیه، برندینگ و سفارش‌های شخصی‌سازی‌شده."}
           </p>
 
-          <div className="mt-7 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mt-7 rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-500">شروع قیمت</p>
-                <p className="mt-1 text-3xl font-black text-[var(--dark)]">
+                <p className="text-sm font-bold text-[#77736D]">شروع قیمت</p>
+                <p className="mt-1 text-3xl font-black text-[#333230]">
                   {formatPrice(product.price)} تومان
                 </p>
               </div>
@@ -122,22 +122,22 @@ export default function ProductDetailClient() {
                 <button
                   type="button"
                   onClick={() => addItem(product)}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--secondary)] px-7 text-sm font-black text-white shadow-lg shadow-sky-900/20 transition hover:opacity-90"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-7 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(178,137,76,0.9)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
                 >
                   افزودن به سبد
                 </button>
                 <Link
                   href={`/design-request?product=${product.slug}`}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-7 text-sm font-black text-white shadow-lg shadow-pink-900/20 transition hover:opacity-90"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-[#D2AD70]/45 bg-[#F6F1E8] px-7 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F2EEE6]"
                 >
                   شروع سفارش
                 </Link>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 border-t border-gray-100 pt-5 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 border-t border-[#E3DED5] pt-5 sm:grid-cols-3">
               {["مشاوره قبل از چاپ", "تایید نهایی طرح", "آماده‌سازی سفارش"].map((item) => (
-                <div key={item} className="rounded-lg bg-gray-50 px-3 py-3 text-sm font-black text-gray-700">
+                <div key={item} className="rounded-xl bg-[#FAFAF8] px-3 py-3 text-sm font-black text-[#77736D]">
                   {item}
                 </div>
               ))}
@@ -145,8 +145,8 @@ export default function ProductDetailClient() {
           </div>
 
           <div className="mt-8">
-            <h2 className="text-xl font-black text-[var(--dark)]">توضیحات محصول</h2>
-            <p className="mt-4 whitespace-pre-line leading-8 text-gray-600">
+            <h2 className="text-xl font-black text-[#333230]">توضیحات محصول</h2>
+            <p className="mt-4 whitespace-pre-line leading-8 text-[#77736D]">
               {product.description ||
                 product.short_description ||
                 "جزئیات این محصول به‌زودی کامل‌تر می‌شود. برای سفارش می‌توانی طرح، متن یا ایده مورد نظرت را ارسال کنی."}
@@ -156,21 +156,21 @@ export default function ProductDetailClient() {
       </section>
 
       {product.related_products.length > 0 && (
-        <section className="border-t border-gray-100 bg-gray-50 py-14">
+        <section className="border-t border-[#E3DED5] bg-[#F2EEE6] py-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
-                <p className="text-sm font-black text-[var(--secondary)]">
+                <p className="text-sm font-black text-[#B2894C]">
                   پیشنهادهای مشابه
                 </p>
-                <h2 className="mt-2 text-2xl font-black text-[var(--dark)]">
+                <h2 className="mt-2 text-2xl font-black text-[#333230]">
                   محصولات مرتبط
                 </h2>
               </div>
 
               <Link
                 href="/products"
-                className="text-sm font-black text-gray-600 transition hover:text-[var(--primary)]"
+                className="text-sm font-black text-[#77736D] transition hover:text-[#B2894C]"
               >
                 مشاهده همه محصولات
               </Link>
@@ -185,11 +185,11 @@ export default function ProductDetailClient() {
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.35)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E3DED5] bg-white/95 px-4 py-3 shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.28)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold text-gray-500">شروع قیمت</p>
-            <p className="text-base font-black text-[var(--dark)]">
+            <p className="text-xs font-bold text-[#77736D]">شروع قیمت</p>
+            <p className="text-base font-black text-[#333230]">
               {formatPrice(product.price)} تومان
             </p>
           </div>
@@ -197,13 +197,13 @@ export default function ProductDetailClient() {
             <button
               type="button"
               onClick={() => addItem(product)}
-              className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--secondary)] px-4 text-sm font-black text-white shadow-lg shadow-sky-900/20"
+              className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#D2AD70] px-4 text-sm font-black text-[#333230]"
             >
               سبد
             </button>
             <Link
               href={`/design-request?product=${product.slug}`}
-              className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] px-4 text-sm font-black text-white shadow-lg shadow-pink-900/20"
+              className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-[#D2AD70]/45 bg-[#F6F1E8] px-4 text-sm font-black text-[#333230]"
             >
               سفارش
             </Link>
@@ -216,22 +216,22 @@ export default function ProductDetailClient() {
 
 function ProductDetailSkeleton() {
   return (
-    <main className="bg-white">
+    <main className="bg-[#FAFAF8]">
       <section className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div>
-          <div className="aspect-square animate-pulse rounded-lg bg-gray-100" />
+          <div className="aspect-square animate-pulse rounded-2xl bg-[#E3DED5]" />
           <div className="mt-4 grid grid-cols-5 gap-3">
             {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="aspect-square animate-pulse rounded-lg bg-gray-100" />
+              <div key={index} className="aspect-square animate-pulse rounded-xl bg-[#E3DED5]" />
             ))}
           </div>
         </div>
 
         <div>
-          <div className="h-8 w-28 animate-pulse rounded bg-gray-100" />
-          <div className="mt-5 h-12 w-3/4 animate-pulse rounded bg-gray-100" />
-          <div className="mt-5 h-24 animate-pulse rounded bg-gray-100" />
-          <div className="mt-7 h-44 animate-pulse rounded-lg bg-gray-100" />
+          <div className="h-8 w-28 animate-pulse rounded bg-[#E3DED5]" />
+          <div className="mt-5 h-12 w-3/4 animate-pulse rounded bg-[#E3DED5]" />
+          <div className="mt-5 h-24 animate-pulse rounded bg-[#E3DED5]" />
+          <div className="mt-7 h-44 animate-pulse rounded-2xl bg-[#E3DED5]" />
         </div>
       </section>
     </main>

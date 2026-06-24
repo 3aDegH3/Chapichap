@@ -1,152 +1,222 @@
+import Image from "next/image";
 import Link from "next/link";
 
-const services = [
-  "چاپ روی تیشرت",
-  "چاپ روی ماگ",
-  "قاب موبایل",
-  "چاپ روی کوسن",
-  "پرینتر سه‌بعدی",
+const designServices = [
+  { type: "print", label: "طرح آماده برای چاپ" },
+  { type: "custom_print", label: "طرح اختصاصی برای چاپ" },
+  { type: "gift", label: "هدیه اختصاصی" },
+  { type: "caricature", label: "طراحی کاریکاتور" },
+  { type: "consulting", label: "مشاوره طراحی" },
+  { type: "other", label: "سایر" },
 ];
 
 const quickLinks = [
   { href: "/", label: "خانه" },
-  { href: "/products", label: "محصولات" },
+  { href: "/products", label: "فروشگاه" },
   { href: "/portfolio", label: "نمونه‌کارها" },
-  { href: "/design-request", label: "سفارش طراحی" },
+  { href: "/about", label: "درباره ما" },
+  { href: "/contact", label: "تماس با ما" },
+  { href: "/design-request", label: "سفارش چاپ دلخواه" },
+  { href: "/cart", label: "سبد خرید" },
 ];
 
 const supportLinks = [
-  { href: "/faq", label: "سوالات متداول" },
-  { href: "/about", label: "درباره ما" },
-  { href: "/contact", label: "تماس با ما" },
   { href: "/account", label: "حساب کاربری" },
+  { href: "/account/orders", label: "پیگیری سفارش" },
+  { href: "/account/tickets", label: "پشتیبانی سفارش" },
+  { href: "/account/profile", label: "اطلاعات کاربری" },
 ];
 
-const features = [
-  { icon: "🛡️", label: "چاپ باکیفیت" },
-  { icon: "🎨", label: "طراحی اختصاصی" },
-  { icon: "🚚", label: "ارسال سریع" },
-  { icon: "⭐", label: "رضایت مشتریان" },
-  { icon: "💬", label: "پشتیبانی پاسخگو" },
+const orderSteps = [
+  "ایده و طرح",
+  "آماده‌سازی فایل",
+  "چاپ تمیز",
+  "بسته‌بندی هدیه",
 ];
+
+const trustItems = [
+  "چاپ ماندگار",
+  "سفارش تکی و عمده",
+  "پشتیبانی قبل از چاپ",
+];
+
+function FooterLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="group inline-flex items-center justify-between gap-4 rounded-xl px-1 py-2 text-sm font-bold text-[#6F6A63] transition duration-300 hover:text-[#333230]"
+    >
+      <span>{label}</span>
+      <span className="h-px w-5 bg-[#D2AD70]/55 transition duration-300 group-hover:w-8 group-hover:bg-[#B2894C]" />
+    </Link>
+  );
+}
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-sky-100 bg-white">
-      {/* Bottom gradient ribbon — mirrors the header (blue dominant) */}
-      <div className="absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-l from-[#00AEEF] via-[#0090C8] to-[#00AEEF]" />
-      <div className="absolute inset-x-0 bottom-[3px] h-px bg-gradient-to-l from-transparent via-[#E6007E]/30 to-transparent" />
+    <footer className="border-t border-[#E3DED5] bg-[#FAFAF8]">
+      <div className="h-[3px] bg-gradient-to-l from-[#333230] via-[#D2AD70] to-[#333230]" />
 
-      {/* Ambient blue glows */}
-      <div className="pointer-events-none absolute -left-20 -top-10 h-44 w-44 rounded-full bg-[#00AEEF]/12 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 top-20 h-40 w-40 rounded-full bg-[#00AEEF]/10 blur-3xl" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 rounded-full bg-[#FFD100]/10 blur-2xl" />
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+        <section className="overflow-hidden rounded-[1.75rem] border border-[#D8CFC0] bg-[#333230] text-white shadow-[0_28px_80px_-58px_rgba(51,50,48,0.85)]">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="p-6 sm:p-8 lg:p-10">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-4"
+                aria-label="صفحه اصلی چاپی چاپ"
+              >
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#D2AD70]/45 bg-[#FAFAF8]">
+                  <Image
+                    src="/brand/logo.png"
+                    alt="لوگوی چاپی چاپ"
+                    width={128}
+                    height={128}
+                    className="h-full w-full object-contain"
+                  />
+                </span>
 
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[2rem] border border-sky-200/70 bg-gradient-to-br from-sky-50/80 via-white to-sky-50/50 p-6 shadow-[0_18px_50px_-20px_rgba(0,174,239,0.35)] sm:p-8">
-          <div className="grid gap-10 md:grid-cols-4">
-            {/* ===== Brand ===== */}
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-[1.1rem] border border-sky-200 bg-gradient-to-br from-[#00AEEF] to-[#0090C8] shadow-[0_10px_28px_-8px_rgba(0,174,239,0.6)] sm:h-16 sm:w-16">
-                  <span className="text-2xl font-black text-white drop-shadow">
-                    چ
+                <span>
+                  <span className="block text-2xl font-black">چاپی چاپ</span>
+                  <span className="mt-1 block text-xs font-black text-[#D2AD70]">
+                    طراحی · چاپ · هدیه
                   </span>
+                </span>
+              </Link>
 
-                  <span className="absolute -bottom-1.5 -left-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#FFD100] text-[10px] font-black text-[#1A1A1A] shadow-md">
-                    ★
-                  </span>
-                </div>
+              <h2 className="mt-7 max-w-2xl text-2xl font-black leading-[1.65] sm:text-3xl">
+                ایده‌ات را بفرست؛ ما آن را به یک هدیه چاپی خوش‌ساخت تبدیل
+                می‌کنیم.
+              </h2>
 
-                <div>
-                  <p className="text-xl font-black tracking-tight text-[#1A1A1A] sm:text-2xl">
-                    Chapi chap
-                  </p>
-                  <p className="mt-0.5 text-xs font-black text-[#00AEEF] sm:text-sm">
-                    خدمات چاپ و هدایای اختصاصی
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-5 max-w-xl text-sm font-medium leading-8 text-gray-600">
-                چاپی‌چاپ جاییه که طرح، رنگ و ایده‌های شخصی تبدیل به هدیه‌های خاص
-                می‌شن؛ از ماگ و تیشرت تا قاب موبایل، کوسن و محصولات سفارشی.
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-8 text-white/68">
+                از انتخاب محصول تا آماده‌سازی فایل چاپ، کنار سفارش هستیم تا
+                خروجی نهایی تمیز، شخصی و مناسب هدیه دادن باشد.
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                {services.map((service) => (
-                  <span
-                    key={service}
-                    className="rounded-full border border-sky-200/80 bg-white px-3 py-1.5 text-xs font-black text-[#0090C8] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#00AEEF] hover:text-[#00AEEF] hover:shadow-[0_8px_18px_-6px_rgba(0,174,239,0.4)]"
-                  >
-                    {service}
-                  </span>
-                ))}
-              </div>
-            </div>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/design-request"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition duration-300 hover:-translate-y-0.5 hover:bg-[#E1BF83]"
+                >
+                  ثبت سفارش اختصاصی
+                </Link>
 
-            {/* ===== Quick Links ===== */}
-            <div>
-              <p className="inline-flex items-center rounded-full border border-sky-200/80 bg-gradient-to-l from-[#00AEEF] to-[#0090C8] px-4 py-2 text-sm font-black text-white shadow-[0_8px_20px_-6px_rgba(0,174,239,0.55)]">
-                دسترسی سریع
-              </p>
-
-              <div className="mt-5 grid gap-1 text-sm font-bold text-gray-600">
-                {quickLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 rounded-lg px-2 py-1.5 transition duration-300 hover:bg-sky-50 hover:text-[#00AEEF]"
-                  >
-                    <span className="h-1 w-1 rounded-full bg-[#00AEEF]/40 transition duration-300 group-hover:w-3 group-hover:bg-[#00AEEF]" />
-                    {link.label}
-                  </Link>
-                ))}
+                <Link
+                  href="/products"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/18 bg-white/[0.06] px-6 text-sm font-black text-white transition duration-300 hover:-translate-y-0.5 hover:border-[#D2AD70]/55 hover:bg-white/[0.1]"
+                >
+                  مشاهده محصولات
+                </Link>
               </div>
             </div>
 
-            {/* ===== Support Links ===== */}
-            <div>
-              <p className="inline-flex items-center rounded-full border border-sky-200/80 bg-white px-4 py-2 text-sm font-black text-[#00AEEF] shadow-[0_8px_20px_-10px_rgba(0,174,239,0.4)]">
-                پشتیبانی
+            <div className="border-t border-white/10 bg-[#2B2925] p-6 sm:p-8 lg:border-r lg:border-t-0">
+              <p className="text-xs font-black text-[#D2AD70]">
+                مسیر سفارش
               </p>
 
-              <div className="mt-5 grid gap-1 text-sm font-bold text-gray-600">
-                {supportLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="group inline-flex items-center gap-2 rounded-lg px-2 py-1.5 transition duration-300 hover:bg-sky-50 hover:text-[#00AEEF]"
+              <div className="mt-5 grid gap-3">
+                {orderSteps.map((step, index) => (
+                  <div
+                    key={step}
+                    className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3"
                   >
-                    <span className="h-1 w-1 rounded-full bg-[#00AEEF]/40 transition duration-300 group-hover:w-3 group-hover:bg-[#00AEEF]" />
-                    {link.label}
-                  </Link>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#D2AD70] text-xs font-black text-[#333230]">
+                      {(index + 1).toLocaleString("fa-IR", {
+                        minimumIntegerDigits: 2,
+                      })}
+                    </span>
+                    <span className="text-sm font-black text-white/86">
+                      {step}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
+        </section>
 
-          {/* ===== Feature Strip ===== */}
-          <div className="mt-8 grid gap-3 border-t border-sky-100 pt-6 sm:grid-cols-2 lg:grid-cols-5">
-            {features.map((item) => (
-              <div
-                key={item.label}
-                className="group flex items-center justify-center gap-2 rounded-2xl border border-sky-100 bg-white px-3 py-3 text-xs font-black text-[#1A1A1A] shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#00AEEF] hover:shadow-[0_10px_22px_-8px_rgba(0,174,239,0.4)]"
-              >
-                <span className="text-base transition duration-300 group-hover:scale-110">
-                  {item.icon}
+        <div className="grid gap-8 border-b border-[#E3DED5] py-10 md:grid-cols-2 lg:grid-cols-[1.15fr_0.9fr_0.9fr_1fr]">
+          <div>
+            <p className="text-sm font-black text-[#333230]">درباره چاپی چاپ</p>
+            <p className="mt-4 max-w-sm text-sm font-medium leading-8 text-[#77736D]">
+              چاپ و آماده‌سازی هدیه‌های اختصاصی برای آدم‌هایی که دوست دارند
+              سفارششان جزئیات شخصی و ظاهر مرتب داشته باشد.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {trustItems.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-[#E3DED5] bg-white px-3 py-1.5 text-xs font-black text-[#6F6A63]"
+                >
+                  {item}
                 </span>
-                {item.label}
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-black text-[#333230]">مسیرهای اصلی</p>
+            <div className="mt-4 grid gap-1">
+              {quickLinks.map((link) => (
+                <FooterLink key={link.href} {...link} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-black text-[#333230]">خدمات مشتریان</p>
+            <div className="mt-4 grid gap-1">
+              {supportLinks.map((link) => (
+                <FooterLink key={link.href} {...link} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-black text-[#333230]">طراحی اختصاصی</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {designServices.map((service) => (
+                <Link
+                  key={service.type}
+                  href={`/design-request?type=${service.type}`}
+                  className="rounded-full border border-[#D8CFC0] bg-[#F6F1E8] px-3 py-1.5 text-xs font-black text-[#333230] transition duration-300 hover:border-[#D2AD70] hover:bg-white"
+                >
+                  {service.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[#D2AD70]/35 bg-white p-4">
+              <p className="text-sm font-black text-[#333230]">
+                سفارش خاص داری؟
+              </p>
+              <p className="mt-2 text-xs font-medium leading-7 text-[#77736D]">
+                طرح، عکس یا مناسبت را بفرست تا بهترین مسیر اجرا را پیشنهاد
+                کنیم.
+              </p>
+              <Link
+                href="/design-request"
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-[#D2AD70] px-4 text-xs font-black text-[#333230] shadow-[0_12px_24px_-18px_rgba(178,137,76,0.85)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#B2894C]"
+              >
+                ارسال ایده
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* ===== Copyright ===== */}
-        <div className="py-5 text-center text-xs font-bold text-gray-500">
-          © تمام حقوق برای{" "}
-          <span className="font-black text-[#00AEEF]">Chapi chap</span> محفوظ
-          است.
+        <div className="flex flex-col gap-3 pt-5 text-xs font-bold text-[#77736D] sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © تمام حقوق برای{" "}
+            <span className="font-black text-[#333230]">چاپی چاپ</span> محفوظ
+            است.
+          </p>
+
+          <p className="text-[#B2894C]">
+            هدیه‌ای شخصی، چاپی تمیز، تجربه‌ای ماندگار
+          </p>
         </div>
       </div>
     </footer>

@@ -241,7 +241,7 @@ class AccountDashboardAPIView(APIView):
     def get(self, request):
         user = request.user
         profile_fields = [user.first_name, user.last_name, user.email, user.phone_number]
-        active_orders = Order.objects.filter(user=user).exclude(status__in=[Order.Status.COMPLETED, Order.Status.CANCELLED])
+        active_orders = Order.objects.filter(user=user).exclude(status__in=[Order.Status.DELIVERED, Order.Status.CANCELLED])
         latest_order = Order.objects.filter(user=user).prefetch_related("items", "payments", "status_history").first()
         latest_design = DesignRequest.objects.filter(user=user).order_by("-created_at").first()
         active_offer = CustomerOffer.objects.filter(user=user, is_active=True).order_by("-created_at").first()

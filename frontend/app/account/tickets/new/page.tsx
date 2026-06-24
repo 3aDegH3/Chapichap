@@ -103,13 +103,13 @@ export default function NewTicketPage() {
   }
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-black text-[var(--secondary)]">پشتیبانی</p>
-          <h2 className="mt-2 text-2xl font-black text-[var(--dark)]">ثبت تیکت جدید</h2>
+          <p className="text-sm font-black text-[#B2894C]">پشتیبانی</p>
+          <h2 className="mt-2 text-2xl font-black text-[#333230]">ثبت تیکت جدید</h2>
         </div>
-        <Link href="/account/tickets" className="text-sm font-black text-gray-500">
+        <Link href="/account/tickets" className="text-sm font-black text-[#77736D] hover:text-[#B2894C]">
           بازگشت
         </Link>
       </div>
@@ -141,25 +141,25 @@ export default function NewTicketPage() {
         </div>
 
         <label className="block">
-          <span className="text-sm font-black text-[var(--dark)]">پیام</span>
+          <span className="text-sm font-black text-[#333230]">پیام</span>
           <textarea
             rows={6}
-            className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium leading-7 outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-pink-100"
+            className="mt-2 w-full rounded-2xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-medium leading-7 outline-none focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
             {...register("message")}
           />
           {errors.message?.message && <span className="mt-2 block text-xs font-bold text-red-600">{errors.message.message}</span>}
         </label>
 
-        <label className="block rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">
-          <span className="block text-sm font-black text-[var(--dark)]">پیوست‌ها</span>
+        <label className="block rounded-2xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] p-5">
+          <span className="block text-sm font-black text-[#333230]">پیوست‌ها</span>
           <input
             type="file"
             multiple
-            className="mt-3 block w-full text-sm font-bold text-gray-600"
+            className="mt-3 block w-full text-sm font-bold text-[#77736D]"
             onChange={(event) => setFiles(Array.from(event.target.files || []))}
           />
           {files.length > 0 && (
-            <div className="mt-3 grid gap-2 text-xs font-bold text-gray-600">
+            <div className="mt-3 grid gap-2 text-xs font-bold text-[#77736D]">
               {files.map((file) => (
                 <span key={`${file.name}-${file.size}`}>{file.name}</span>
               ))}
@@ -190,10 +190,10 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-[var(--dark)]">{label}</span>
+      <span className="text-sm font-black text-[#333230]">{label}</span>
       <select
         id={id}
-        className="mt-2 h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm font-medium outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-pink-100"
+        className="mt-2 h-12 w-full rounded-2xl border border-[#E3DED5] bg-white px-4 text-sm font-medium outline-none focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
         {...register}
       >
         {children}

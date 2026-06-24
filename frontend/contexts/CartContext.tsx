@@ -57,45 +57,70 @@ function readStoredCart() {
   }
 }
 
+function cartItemsFromApi(cart: ApiCart): CartItem[] {
+  return cart.items.map((item) => ({
+    product: item.product,
+    quantity: item.quantity,
+  }));
+}
+
+function mergeCartItems(serverCart: ApiCart, localItems: CartItem[]) {
+  const mergedItems = new Map<number, CartItem>();
+
+  cartItemsFromApi(serverCart).forEach((item) => {
+    mergedItems.set(item.product.id, item);
+  });
+
+  localItems.forEach((item) => {
+    const serverItem = mergedItems.get(item.product.id);
+
+    mergedItems.set(item.product.id, {
+      product: item.product,
+      quantity: Math.max(serverItem?.quantity || 0, item.quantity),
+    });
+  });
+
+  return Array.from(mergedItems.values());
+}
+
+function hasAllItems(cart: ApiCart, expectedItems: CartItem[]) {
+  return expectedItems.every((item) =>
+    cart.items.some((cartItem) => cartItem.product.id === item.product.id)
+  );
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(readStoredCart);
+  const [items, setItems] = useState<CartItem[]>([]);
   const [toast, setToast] = useState<Toast | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const itemsRef = useRef<CartItem[]>(items);
+  const [pendingServerUpdates, setPendingServerUpdates] = useState(0);
+  const itemsRef = useRef<CartItem[]>([]);
+  const hasUserMutatedRef = useRef(false);
 
   const applyApiCart = useCallback((cart: ApiCart) => {
-    setItems(
-      cart.items.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-      }))
-    );
+    setItems(cartItemsFromApi(cart));
   }, []);
 
   const syncLocalItemsWithApi = useCallback(async (localItems: CartItem[]) => {
     const serverCart = await getCart();
 
     if (localItems.length === 0) {
-      applyApiCart(serverCart);
+      if (!hasUserMutatedRef.current) applyApiCart(serverCart);
       return;
     }
 
-    const mergedItems = new Map<number, number>();
-    serverCart.items.forEach((item) => {
-      mergedItems.set(item.product.id, item.quantity);
-    });
-
-    localItems.forEach((item) => {
-      const currentQuantity = mergedItems.get(item.product.id) || 0;
-      mergedItems.set(item.product.id, Math.max(currentQuantity, item.quantity));
-    });
+    const mergedCartItems = mergeCartItems(serverCart, localItems);
+    if (!hasUserMutatedRef.current) setItems(mergedCartItems);
 
     await Promise.all(
       localItems.map((item) => {
         const serverItem = serverCart.items.find(
           (cartItem) => cartItem.product.id === item.product.id
         );
-        const quantity = mergedItems.get(item.product.id) || item.quantity;
+        const mergedItem = mergedCartItems.find(
+          (cartItem) => cartItem.product.id === item.product.id
+        );
+        const quantity = mergedItem?.quantity || item.quantity;
 
         return serverItem
           ? updateCartItem(item.product.id, quantity)
@@ -103,12 +128,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       })
     );
 
-    applyApiCart(await getCart());
+    const syncedCart = await getCart();
+    if (!hasUserMutatedRef.current && hasAllItems(syncedCart, mergedCartItems)) {
+      applyApiCart(syncedCart);
+    }
   }, [applyApiCart]);
 
   useEffect(() => {
-    void syncLocalItemsWithApi(itemsRef.current).catch(() => undefined);
-    setIsHydrated(true);
+    const timeout = window.setTimeout(() => {
+      const localItems = readStoredCart();
+      itemsRef.current = localItems;
+      setItems(localItems);
+
+      void syncLocalItemsWithApi(localItems)
+        .catch(() => undefined)
+        .finally(() => setIsHydrated(true));
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [syncLocalItemsWithApi]);
 
   useEffect(() => {
@@ -139,8 +176,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setToast({ id: Date.now(), message });
   }, []);
 
+  const runServerUpdate = useCallback((operation: Promise<unknown>, fallbackMessage: string) => {
+    setPendingServerUpdates((value) => value + 1);
+
+    void operation
+      .catch(() => showToast(fallbackMessage))
+      .finally(() => setPendingServerUpdates((value) => Math.max(0, value - 1)));
+  }, [showToast]);
+
   const addItem = useCallback((product: Product, quantity = 1) => {
     const safeQuantity = Math.max(1, quantity);
+    hasUserMutatedRef.current = true;
 
     setItems((currentItems) => {
       const existingItem = currentItems.find((item) => item.product.id === product.id);
@@ -157,13 +203,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
 
     showToast("محصول به سبد خرید اضافه شد.");
-    void addToCart(product.id, safeQuantity)
-      .then(applyApiCart)
-      .catch(() => showToast("محصول در همین دستگاه ذخیره شد؛ اتصال سرور برقرار نیست."));
-  }, [applyApiCart, showToast]);
+    runServerUpdate(
+      addToCart(product.id, safeQuantity),
+      "محصول در همین دستگاه ذخیره شد؛ اتصال سرور برقرار نیست."
+    );
+  }, [runServerUpdate, showToast]);
 
   const updateQuantity = useCallback((productId: number, quantity: number) => {
     const safeQuantity = Math.max(0, quantity);
+    hasUserMutatedRef.current = true;
 
     setItems((currentItems) =>
       safeQuantity === 0
@@ -173,34 +221,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
           )
     );
 
-    void updateCartItem(productId, safeQuantity)
-      .then(applyApiCart)
-      .catch(() => showToast("تغییر تعداد محلی ذخیره شد؛ اتصال سرور برقرار نیست."));
-  }, [applyApiCart, showToast]);
+    runServerUpdate(
+      updateCartItem(productId, safeQuantity),
+      "تغییر تعداد محلی ذخیره شد؛ اتصال سرور برقرار نیست."
+    );
+  }, [runServerUpdate]);
 
   const removeItem = useCallback((productId: number) => {
+    hasUserMutatedRef.current = true;
     setItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
     showToast("آیتم از سبد خرید حذف شد.");
-    void removeCartItem(productId)
-      .then(applyApiCart)
-      .catch(() => showToast("حذف در همین دستگاه ذخیره شد؛ اتصال سرور برقرار نیست."));
-  }, [applyApiCart, showToast]);
+    runServerUpdate(
+      removeCartItem(productId),
+      "حذف در همین دستگاه ذخیره شد؛ اتصال سرور برقرار نیست."
+    );
+  }, [runServerUpdate, showToast]);
 
   const clearCart = useCallback(() => {
     const currentItems = itemsRef.current;
+    hasUserMutatedRef.current = true;
     setItems([]);
     showToast("سبد خرید خالی شد.");
-    void Promise.all(currentItems.map((item) => removeCartItem(item.product.id))).catch(() =>
-      showToast("سبد در همین دستگاه خالی شد؛ اتصال سرور برقرار نیست.")
+    runServerUpdate(
+      Promise.all(currentItems.map((item) => removeCartItem(item.product.id))),
+      "سبد در همین دستگاه خالی شد؛ اتصال سرور برقرار نیست."
     );
-  }, [showToast]);
+  }, [runServerUpdate, showToast]);
+
+  const isReady = isHydrated && pendingServerUpdates === 0;
 
   const value = useMemo<CartContextValue>(
     () => ({
       items,
       totalItems: totals.totalItems,
       totalPrice: totals.totalPrice,
-      isReady: isHydrated,
+      isReady,
       toast,
       addItem,
       updateQuantity,
@@ -211,7 +266,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [
       addItem,
       clearCart,
-      isHydrated,
+      isReady,
       items,
       removeItem,
       toast,
@@ -225,7 +280,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider value={value}>
       {children}
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-lg border border-sky-100 bg-white px-4 py-3 text-center text-sm font-black text-[var(--dark)] shadow-[0_18px_60px_-24px_rgba(0,0,0,0.45)] sm:left-6 sm:translate-x-0">
+        <div className="fixed bottom-5 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-xl border border-[#D2AD70]/45 bg-[#FAFAF8] px-4 py-3 text-center text-sm font-black text-[#333230] shadow-[0_18px_60px_-30px_rgba(51,50,48,0.65)] sm:left-6 sm:translate-x-0">
           {toast.message}
         </div>
       )}

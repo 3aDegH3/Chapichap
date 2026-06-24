@@ -1,28 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #E6007E;
-  --secondary: #00AEEF;
-  --accent: #FFD100;
-  --dark: #1A1A1A;
+  --primary: #b2894c;
+  --secondary: #d2ad70;
+  --accent: #f2eee6;
+  --dark: #333230;
 
-  --background: #ffffff;
-  --foreground: #1A1A1A;
+  --background: #fafaf8;
+  --foreground: #333230;
+
+  --font-primary: var(--font-vazirmatn, Tahoma), Tahoma, Arial, sans-serif;
+  --font-sans: var(--font-primary);
+  --default-font-family: var(--font-primary);
+
+  --font-weight-medium: 450;
+  --font-weight-bold: 650;
+  --font-weight-black: 800;
 }
 
 * {
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 html {
   scroll-behavior: smooth;
+  direction: rtl;
+  font-family: var(--font-primary);
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, sans-serif;
+
+  font-family: var(--font-primary);
+
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.8;
+
+  direction: rtl;
+  text-align: right;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -35,19 +59,79 @@ input,
 textarea,
 select {
   font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  font-weight: 400;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  font-family: inherit;
+  color: inherit;
+}
+
+h1 {
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+h2 {
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+h3 {
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+p {
+  line-height: 1.9;
 }
 
 ::selection {
   background: var(--primary);
-  color: white;
+  color: #ffffff;
 }
 
 .brand-bg {
   background:
-    radial-gradient(circle at 10% 15%, rgba(230, 0, 126, 0.08), transparent 22%),
-    radial-gradient(circle at 90% 10%, rgba(0, 174, 239, 0.08), transparent 22%),
-    radial-gradient(circle at 50% 100%, rgba(255, 209, 0, 0.12), transparent 28%),
-    #ffffff;
+    radial-gradient(
+      circle at 10% 15%,
+      rgba(210, 173, 112, 0.1),
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(51, 50, 48, 0.05),
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(242, 238, 230, 0.85),
+      transparent 28%
+    ),
+    #fafaf8;
 }
 
 @keyframes headerMascotFloat {

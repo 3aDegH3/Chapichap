@@ -24,15 +24,15 @@ export default function SectionHeader({
       )}
     >
       {eyebrow && (
-        <p className="text-sm font-black text-[var(--primary)]">{eyebrow}</p>
+        <p className="text-sm font-black text-[#B2894C]">{eyebrow}</p>
       )}
 
-      <h2 className="mt-3 text-3xl font-black leading-snug text-[var(--dark)]">
+      <h2 className="mt-3 text-3xl font-black leading-snug text-[#333230]">
         {title}
       </h2>
 
       {description && (
-        <p className="mt-4 leading-8 text-gray-600">{description}</p>
+        <p className="mt-4 leading-8 text-[#77736D]">{description}</p>
       )}
     </div>
   );

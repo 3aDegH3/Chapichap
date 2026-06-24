@@ -57,51 +57,51 @@ export default function AccountTicketsPage() {
 
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-black text-[var(--dark)]">پشتیبانی</h2>
-          <p className="mt-2 text-sm font-bold text-gray-500">پیگیری سفارش، پرداخت، فایل طراحی و موارد مرتبط</p>
+          <h2 className="text-xl font-black text-[#333230]">پشتیبانی</h2>
+          <p className="mt-2 text-sm font-bold text-[#77736D]">پیگیری سفارش، پرداخت، فایل طراحی و موارد مرتبط</p>
         </div>
         <Link
           href="/account/tickets/new"
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-[var(--secondary)] px-6 text-sm font-black text-white"
+          className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230]"
         >
           تیکت جدید
         </Link>
       </div>
 
       {tickets.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-          <h3 className="text-xl font-black text-[var(--dark)]">تیکتی ثبت نشده</h3>
-          <p className="mx-auto mt-3 max-w-md leading-7 text-gray-600">
+        <div className="rounded-2xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] px-6 py-16 text-center">
+          <h3 className="text-xl font-black text-[#333230]">تیکتی ثبت نشده</h3>
+          <p className="mx-auto mt-3 max-w-md leading-7 text-[#77736D]">
             پیام‌های پشتیبانی بعد از ثبت در این بخش قابل پیگیری هستند.
           </p>
         </div>
       ) : (
         <div className="grid gap-4">
           {tickets.map((ticket) => (
-            <article key={ticket.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <article key={ticket.id} className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <Link
                     href={`/account/tickets/${ticket.id}`}
-                    className="text-xl font-black text-[var(--dark)] hover:text-[var(--primary)]"
+                    className="text-xl font-black text-[#333230] hover:text-[#B2894C]"
                   >
                     {ticket.subject}
                   </Link>
-                  <p className="mt-2 text-sm font-bold text-gray-500">{formatDate(ticket.updated_at)}</p>
+                  <p className="mt-2 text-sm font-bold text-[#77736D]">{formatDate(ticket.updated_at)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusBadge label={ticket.status_label} />
                   {ticket.unread_count > 0 && (
-                    <span className="rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-black text-[var(--primary)]">
+                    <span className="rounded-full border border-[#D2AD70]/45 bg-[#F6F1E8] px-3 py-1 text-xs font-black text-[#B2894C]">
                       {ticket.unread_count.toLocaleString("fa-IR")} پیام جدید
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 text-sm font-bold text-gray-600 sm:grid-cols-3">
+              <div className="mt-5 grid gap-3 text-sm font-bold text-[#77736D] sm:grid-cols-3">
                 <InfoPill label="دسته‌بندی" value={ticket.category_label} />
                 <InfoPill label="اولویت" value={ticket.priority_label} />
                 <InfoPill label="سفارش" value={ticket.order_number || "-"} />
@@ -115,14 +115,14 @@ export default function AccountTicketsPage() {
 }
 
 function StatusBadge({ label }: { label: string }) {
-  return <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-black text-[var(--secondary)]">{label}</span>;
+  return <span className="rounded-full border border-[#D2AD70]/35 bg-[#F6F1E8] px-3 py-1 text-xs font-black text-[#B2894C]">{label}</span>;
 }
 
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 px-4 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 break-words font-black text-[var(--dark)]">{value}</p>
+    <div className="rounded-xl bg-[#FAFAF8] px-4 py-3">
+      <p className="text-xs text-[#77736D]">{label}</p>
+      <p className="mt-1 break-words font-black text-[#333230]">{value}</p>
     </div>
   );
 }

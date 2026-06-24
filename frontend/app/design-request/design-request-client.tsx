@@ -31,16 +31,21 @@ const ALLOWED_FILE_TYPES = [
 ];
 
 const orderTypes = [
+  { value: "print", label: "طرح آماده برای چاپ", hint: "برای بررسی و تنظیم فایل آماده" },
+  { value: "custom_print", label: "طرح اختصاصی برای چاپ", hint: "برای تبدیل ایده خام به فایل چاپی" },
   { value: "gift", label: "هدیه اختصاصی", hint: "برای ماگ، تیشرت و هدیه شخصی" },
-  { value: "print", label: "طرح آماده چاپ", hint: "برای آماده‌سازی فایل چاپی" },
-  { value: "logo", label: "طراحی لوگو", hint: "برای هویت بصری و برند" },
+  { value: "caricature", label: "طراحی کاریکاتور", hint: "برای هدیه‌های تصویری و خاص" },
   { value: "consulting", label: "مشاوره طراحی", hint: "برای انتخاب مسیر درست" },
   { value: "other", label: "سایر", hint: "برای ایده‌های متفاوت" },
 ] as const;
 
+function isOrderTypeValue(value: string | null): value is DesignRequestFormValues["order_type"] {
+  return orderTypes.some((item) => item.value === value);
+}
+
 const designRequestSchema = z.object({
   product_id: z.number().nullable().optional(),
-  order_type: z.enum(["gift", "print", "logo", "consulting", "other"]),
+  order_type: z.enum(["print", "custom_print", "gift", "caricature", "consulting", "other"]),
   description: z
     .string()
     .trim()
@@ -70,7 +75,7 @@ type DraftPayload = {
 
 const defaultValues: DesignRequestFormValues = {
   product_id: null,
-  order_type: "gift",
+  order_type: "print",
   description: "",
   uploaded_file_id: null,
   contact_name: "",
@@ -110,6 +115,7 @@ function isImageFile(file: UploadedFileResponse) {
 export default function DesignRequestClient() {
   const searchParams = useSearchParams();
   const productSlug = searchParams.get("product");
+  const orderTypeParam = searchParams.get("type");
 
   const [step, setStep] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -149,18 +155,25 @@ export default function DesignRequestClient() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const draft = readStoredDraft();
+      const nextValues = {
+        ...defaultValues,
+        ...(draft?.values || {}),
+        ...(isOrderTypeValue(orderTypeParam) ? { order_type: orderTypeParam } : {}),
+      };
 
       if (draft) {
-        reset({ ...defaultValues, ...draft.values });
+        reset(nextValues);
         setUploadedFile(draft.uploadedFile);
         setSelectedProduct(draft.selectedProduct);
+      } else if (isOrderTypeValue(orderTypeParam)) {
+        reset(nextValues);
       }
 
       setHasLoadedDraft(true);
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [reset]);
+  }, [orderTypeParam, reset]);
 
   useEffect(() => {
     if (!productSlug) return;
@@ -284,22 +297,22 @@ export default function DesignRequestClient() {
   }
 
   return (
-    <main className="bg-white">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-sky-50/80 to-white">
+    <main className="bg-[#FAFAF8]">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-sm font-black text-[var(--secondary)]">سفارش طراحی اختصاصی</p>
+          <p className="text-sm font-black text-[#B2894C]">سفارش طراحی اختصاصی</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black leading-tight text-[var(--dark)] sm:text-5xl">
+              <h1 className="text-3xl font-black leading-tight text-[#333230] sm:text-5xl">
                 ایده‌ات را برای چاپ آماده کنیم
               </h1>
-              <p className="mt-4 max-w-2xl leading-8 text-gray-600">
+              <p className="mt-4 max-w-2xl leading-8 text-[#77736D]">
                 مسیر ثبت درخواست کوتاه است و وضعیت اولیه بعد از ثبت نمایش داده می‌شود.
               </p>
             </div>
             <Link
               href="/cart"
-              className="inline-flex h-12 w-fit items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+              className="inline-flex h-12 w-fit items-center justify-center rounded-xl border border-[#D2AD70]/45 bg-white px-6 text-sm font-black text-[#333230] transition hover:-translate-y-0.5 hover:bg-[#F6F1E8]"
             >
               مشاهده سبد خرید
             </Link>
@@ -308,10 +321,10 @@ export default function DesignRequestClient() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-        <aside className="h-fit rounded-lg border border-gray-200 bg-white p-4 shadow-sm lg:sticky lg:top-28">
-          <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+        <aside className="h-fit rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] lg:sticky lg:top-28">
+          <div className="h-2 overflow-hidden rounded-full bg-[#F2EEE6]">
             <div
-              className="h-full rounded-full bg-gradient-to-l from-[var(--primary)] to-[var(--secondary)] transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-l from-[#B2894C] to-[#D2AD70] transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -326,19 +339,19 @@ export default function DesignRequestClient() {
                   key={item.title}
                   type="button"
                   onClick={() => setStep(index)}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-right transition ${
+                  className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-right transition ${
                     isActive
-                      ? "border-sky-200 bg-sky-50 text-[var(--secondary)]"
-                      : "border-transparent bg-white text-gray-600 hover:bg-gray-50"
+                      ? "border-[#D2AD70]/55 bg-[#F6F1E8] text-[#B2894C]"
+                      : "border-transparent bg-white text-[#77736D] hover:bg-[#FAFAF8]"
                   }`}
                 >
                   <span
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${
                       isDone
-                        ? "bg-[var(--secondary)] text-white"
+                        ? "bg-[#D2AD70] text-[#333230]"
                         : isActive
-                          ? "bg-white text-[var(--secondary)]"
-                          : "bg-gray-100 text-gray-500"
+                          ? "bg-white text-[#B2894C]"
+                          : "bg-[#F2EEE6] text-[#77736D]"
                     }`}
                   >
                     {isDone ? "✓" : (index + 1).toLocaleString("fa-IR")}
@@ -350,9 +363,9 @@ export default function DesignRequestClient() {
           </div>
 
           {selectedProduct && (
-            <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50/70 p-4">
-              <p className="text-xs font-black text-[var(--secondary)]">محصول انتخاب‌شده</p>
-              <p className="mt-2 line-clamp-2 text-sm font-black text-[var(--dark)]">
+            <div className="mt-5 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4">
+              <p className="text-xs font-black text-[#B2894C]">محصول انتخاب‌شده</p>
+              <p className="mt-2 line-clamp-2 text-sm font-black text-[#333230]">
                 {selectedProduct.title}
               </p>
             </div>
@@ -367,7 +380,7 @@ export default function DesignRequestClient() {
 
         <form
           onSubmit={handleSubmit(submitForm)}
-          className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-7"
+          className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] sm:p-7"
         >
           {step === 0 && (
             <div>
@@ -376,10 +389,10 @@ export default function DesignRequestClient() {
                 {orderTypes.map((item) => (
                   <label
                     key={item.value}
-                    className={`cursor-pointer rounded-lg border p-4 transition ${
+                    className={`cursor-pointer rounded-xl border p-4 transition ${
                       watchedValues.order_type === item.value
-                        ? "border-[var(--primary)] bg-pink-50"
-                        : "border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50/60"
+                        ? "border-[#D2AD70] bg-[#F6F1E8]"
+                        : "border-[#E3DED5] bg-white hover:border-[#D2AD70]/60 hover:bg-[#FAFAF8]"
                     }`}
                   >
                     <input
@@ -388,10 +401,10 @@ export default function DesignRequestClient() {
                       className="sr-only"
                       {...register("order_type")}
                     />
-                    <span className="block text-base font-black text-[var(--dark)]">
+                    <span className="block text-base font-black text-[#333230]">
                       {item.label}
                     </span>
-                    <span className="mt-2 block text-sm leading-6 text-gray-600">{item.hint}</span>
+                    <span className="mt-2 block text-sm leading-6 text-[#77736D]">{item.hint}</span>
                   </label>
                 ))}
               </div>
@@ -408,14 +421,14 @@ export default function DesignRequestClient() {
                 {...register("description")}
                 rows={9}
                 placeholder="مثلاً: یک طرح برای چاپ روی ماگ می‌خواهم؛ متن فارسی دارد، رنگ‌های شاد باشد، فایل لوگو را هم آپلود می‌کنم."
-                className={`mt-6 w-full resize-none rounded-lg border bg-white px-4 py-3 text-sm leading-8 text-[var(--dark)] outline-none transition placeholder:text-gray-400 focus:ring-4 ${
+                className={`mt-6 w-full resize-none rounded-xl border bg-white px-4 py-3 text-sm leading-8 text-[#333230] outline-none transition placeholder:text-[#A8A29A] focus:ring-4 ${
                   errors.description
                     ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                    : "border-gray-200 focus:border-[var(--primary)] focus:ring-pink-100"
+                    : "border-[#E3DED5] focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 }`}
               />
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-                <span className="font-bold text-gray-500">
+                <span className="font-bold text-[#77736D]">
                   {(watchedValues.description || "").length.toLocaleString("fa-IR")} کاراکتر
                 </span>
                 {errors.description && (
@@ -435,16 +448,16 @@ export default function DesignRequestClient() {
                   const file = event.dataTransfer.files.item(0);
                   if (file) void handleFile(file);
                 }}
-                className="mt-6 flex min-h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-sky-200 bg-sky-50/60 px-5 py-10 text-center transition hover:border-[var(--secondary)] hover:bg-sky-50"
+                className="mt-6 flex min-h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D2AD70]/55 bg-[#F6F1E8] px-5 py-10 text-center transition hover:border-[#B2894C] hover:bg-[#F2EEE6]"
               >
-                <span className="text-lg font-black text-[var(--dark)]">
+                <span className="text-lg font-black text-[#333230]">
                   فایل را اینجا رها کن یا انتخاب کن
                 </span>
-                <span className="mt-3 text-sm font-bold text-gray-500">
+                <span className="mt-3 text-sm font-bold text-[#77736D]">
                   JPG، PNG، WebP، PDF یا ZIP تا ۱۰ مگابایت
                 </span>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full bg-[var(--secondary)] px-6 text-sm font-black text-white transition hover:opacity-90">
+                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition hover:-translate-y-0.5 hover:bg-[#B2894C]">
                     انتخاب فایل
                     <input
                       type="file"
@@ -457,7 +470,7 @@ export default function DesignRequestClient() {
                       }}
                     />
                   </label>
-                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]">
+                  <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#FAFAF8]">
                     گرفتن عکس
                     <input
                       type="file"
@@ -475,7 +488,7 @@ export default function DesignRequestClient() {
               </div>
 
               {isUploading && (
-                <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 p-4 text-sm font-black text-[var(--secondary)]">
+                <div className="mt-4 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4 text-sm font-black text-[#B2894C]">
                   فایل در حال آپلود است...
                 </div>
               )}
@@ -487,8 +500,8 @@ export default function DesignRequestClient() {
               )}
 
               {uploadedFile && (
-                <div className="mt-5 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-[120px_1fr_auto] sm:items-center">
-                  <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-gray-50 text-sm font-black text-[var(--secondary)]">
+                <div className="mt-5 grid gap-4 rounded-xl border border-[#E3DED5] bg-white p-4 sm:grid-cols-[120px_1fr_auto] sm:items-center">
+                  <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-[#F6F1E8] text-sm font-black text-[#B2894C]">
                     {previewUrl && isImageFile(uploadedFile) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={previewUrl} alt={uploadedFile.original_name} className="h-full w-full object-cover" />
@@ -497,17 +510,17 @@ export default function DesignRequestClient() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="line-clamp-1 text-sm font-black text-[var(--dark)]">
+                    <p className="line-clamp-1 text-sm font-black text-[#333230]">
                       {uploadedFile.original_name}
                     </p>
-                    <p className="mt-1 text-sm font-bold text-gray-500">
+                    <p className="mt-1 text-sm font-bold text-[#77736D]">
                       {formatFileSize(uploadedFile.size)}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={removeUploadedFile}
-                    className="h-10 rounded-full border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100"
+                    className="h-10 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100"
                   >
                     حذف فایل
                   </button>
@@ -567,12 +580,12 @@ export default function DesignRequestClient() {
             </div>
           )}
 
-          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[#E3DED5] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={goBack}
               disabled={step === 0 || isSubmitting}
-              className="h-12 rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-gray-700 transition hover:border-[var(--secondary)] hover:text-[var(--secondary)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-12 rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] hover:text-[#333230] disabled:cursor-not-allowed disabled:opacity-50"
             >
               برگشت
             </button>
@@ -582,7 +595,7 @@ export default function DesignRequestClient() {
                 type="button"
                 onClick={() => void goNext()}
                 disabled={isUploading}
-                className="h-12 rounded-full bg-[var(--secondary)] px-7 text-sm font-black text-white shadow-lg shadow-sky-900/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 rounded-xl bg-[#D2AD70] px-7 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(178,137,76,0.9)] transition hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 ادامه
               </button>
@@ -590,7 +603,7 @@ export default function DesignRequestClient() {
               <button
                 type="submit"
                 disabled={isSubmitting || isUploading}
-                className="h-12 rounded-full bg-[var(--primary)] px-7 text-sm font-black text-white shadow-lg shadow-pink-900/20 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 rounded-xl bg-[#D2AD70] px-7 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(178,137,76,0.9)] transition hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "در حال ثبت..." : "ثبت درخواست"}
               </button>
@@ -605,8 +618,8 @@ export default function DesignRequestClient() {
 function StepTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
-      <p className="text-sm font-black text-[var(--secondary)]">{eyebrow}</p>
-      <h2 className="mt-2 text-2xl font-black text-[var(--dark)] sm:text-3xl">{title}</h2>
+      <p className="text-sm font-black text-[#B2894C]">{eyebrow}</p>
+      <h2 className="mt-2 text-2xl font-black text-[#333230] sm:text-3xl">{title}</h2>
     </div>
   );
 }
@@ -622,7 +635,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-[var(--dark)]">{label}</span>
+      <span className="text-sm font-black text-[#333230]">{label}</span>
       <div className="mt-2">{children}</div>
       {error && <span className="mt-2 block text-xs font-bold text-red-600">{error}</span>}
     </label>
@@ -630,18 +643,18 @@ function Field({
 }
 
 function inputClass(hasError: boolean) {
-  return `h-12 w-full rounded-lg border bg-white px-4 text-sm font-medium text-[var(--dark)] outline-none transition placeholder:text-gray-400 focus:ring-4 ${
+  return `h-12 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#333230] outline-none transition placeholder:text-[#A8A29A] focus:ring-4 ${
     hasError
       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-      : "border-gray-200 focus:border-[var(--primary)] focus:ring-pink-100"
+      : "border-[#E3DED5] focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
   }`;
 }
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-      <p className="text-xs font-black text-gray-500">{label}</p>
-      <p className="mt-2 whitespace-pre-line break-words text-sm font-bold leading-7 text-[var(--dark)]">
+    <div className="rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4">
+      <p className="text-xs font-black text-[#77736D]">{label}</p>
+      <p className="mt-2 whitespace-pre-line break-words text-sm font-bold leading-7 text-[#333230]">
         {value}
       </p>
     </div>
@@ -656,17 +669,17 @@ function DesignRequestSuccess({
   uploadedFile: UploadedFileResponse | null;
 }) {
   return (
-    <main className="bg-white">
+    <main className="bg-[#FAFAF8]">
       <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-50 text-2xl font-black text-[var(--secondary)]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#D2AD70]/45 bg-[#F6F1E8] text-2xl font-black text-[#B2894C]">
           ✓
         </div>
-        <h1 className="mt-6 text-3xl font-black text-[var(--dark)]">درخواست ثبت شد</h1>
-        <p className="mt-4 leading-8 text-gray-600">
+        <h1 className="mt-6 text-3xl font-black text-[#333230]">درخواست ثبت شد</h1>
+        <p className="mt-4 leading-8 text-[#77736D]">
           کد درخواست #{request.id.toLocaleString("fa-IR")} با وضعیت «{request.status_label}» ثبت شد.
         </p>
 
-        <div className="mt-8 grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-5 text-right">
+        <div className="mt-8 grid gap-3 rounded-2xl border border-[#E3DED5] bg-white p-5 text-right shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
           <ReviewRow label="نوع سفارش" value={request.order_type_label} />
           <ReviewRow label="شماره تماس" value={request.contact_phone} />
           <ReviewRow label="فایل" value={uploadedFile?.original_name || request.uploaded_file?.original_name || "بدون فایل"} />
@@ -675,13 +688,13 @@ function DesignRequestSuccess({
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/products"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+            className="inline-flex h-12 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
           >
             مشاهده محصولات
           </Link>
           <Link
             href="/cart"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-black text-white transition hover:opacity-90"
+            className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
           >
             رفتن به سبد خرید
           </Link>

@@ -48,17 +48,17 @@ export default function AccountDashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-black text-[var(--dark)]">آخرین سفارش</h2>
-            <Link href="/account/orders" className="text-sm font-black text-[var(--secondary)]">همه سفارش‌ها</Link>
+            <h2 className="text-xl font-black text-[#333230]">آخرین سفارش</h2>
+            <Link href="/account/orders" className="text-sm font-black text-[#B2894C]">همه سفارش‌ها</Link>
           </div>
           {dashboard.latest_order ? (
-            <div className="mt-5 rounded-xl bg-gray-50 p-4">
-              <Link href={`/account/orders/${dashboard.latest_order.id}`} className="text-lg font-black text-[var(--dark)] hover:text-[var(--primary)]">
+            <div className="mt-5 rounded-xl bg-[#FAFAF8] p-4">
+              <Link href={`/account/orders/${dashboard.latest_order.id}`} className="text-lg font-black text-[#333230] hover:text-[#B2894C]">
                 {dashboard.latest_order.order_number}
               </Link>
-              <div className="mt-4 grid gap-3 text-sm font-bold text-gray-600 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 text-sm font-bold text-[#77736D] sm:grid-cols-2">
                 <InfoPill label="وضعیت" value={dashboard.latest_order.status_label} />
                 <InfoPill label="مبلغ" value={`${formatPrice(dashboard.latest_order.total_amount)} تومان`} />
               </div>
@@ -68,15 +68,15 @@ export default function AccountDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-black text-[var(--dark)]">درخواست طراحی</h2>
-            <Link href="/account/design-requests" className="text-sm font-black text-[var(--secondary)]">همه درخواست‌ها</Link>
+            <h2 className="text-xl font-black text-[#333230]">درخواست طراحی</h2>
+            <Link href="/account/design-requests" className="text-sm font-black text-[#B2894C]">همه درخواست‌ها</Link>
           </div>
           {dashboard.latest_design_request ? (
-            <div className="mt-5 rounded-xl bg-gray-50 p-4">
-              <p className="text-lg font-black text-[var(--dark)]">{dashboard.latest_design_request.order_type_label}</p>
-              <div className="mt-4 grid gap-3 text-sm font-bold text-gray-600 sm:grid-cols-2">
+            <div className="mt-5 rounded-xl bg-[#FAFAF8] p-4">
+              <p className="text-lg font-black text-[#333230]">{dashboard.latest_design_request.order_type_label}</p>
+              <div className="mt-4 grid gap-3 text-sm font-bold text-[#77736D] sm:grid-cols-2">
                 <InfoPill label="وضعیت" value={dashboard.latest_design_request.status_label} />
                 <InfoPill label="ثبت" value={new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(new Date(dashboard.latest_design_request.created_at))} />
               </div>
@@ -92,9 +92,9 @@ export default function AccountDashboardPage() {
 
 function MetricCard({ label, value, href }: { label: string; value: number; href: string }) {
   return (
-    <Link href={href} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-sky-200 hover:bg-sky-50">
-      <p className="text-sm font-black text-gray-500">{label}</p>
-      <p className="mt-4 text-3xl font-black text-[var(--dark)]">{value.toLocaleString("fa-IR")}</p>
+    <Link href={href} className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]">
+      <p className="text-sm font-black text-[#77736D]">{label}</p>
+      <p className="mt-4 text-3xl font-black text-[#333230]">{value.toLocaleString("fa-IR")}</p>
     </Link>
   );
 }
@@ -102,17 +102,17 @@ function MetricCard({ label, value, href }: { label: string; value: number; href
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-white px-4 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 font-black text-[var(--dark)]">{value}</p>
+      <p className="text-xs text-[#77736D]">{label}</p>
+      <p className="mt-1 font-black text-[#333230]">{value}</p>
     </div>
   );
 }
 
 function EmptyState({ text, href, label }: { text: string; href: string; label: string }) {
   return (
-    <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-      <p className="font-bold text-gray-600">{text}</p>
-      <Link href={href} className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[var(--secondary)] px-5 text-sm font-black text-white">
+    <div className="mt-5 rounded-xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] p-6 text-center">
+      <p className="font-bold text-[#77736D]">{text}</p>
+      <Link href={href} className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#D2AD70] px-5 text-sm font-black text-[#333230]">
         {label}
       </Link>
     </div>

@@ -195,7 +195,7 @@ export default function AccountAddressesPage() {
           <Input id="city" label="شهر" error={errors.city?.message} {...register("city")} />
           <label className="block">
             <span className="text-sm font-black text-[var(--dark)]">آدرس کامل</span>
-            <textarea rows={3} className="mt-2 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-pink-100" {...register("address")} />
+            <textarea rows={3} className="mt-2 w-full rounded-2xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20" {...register("address")} />
             {errors.address?.message && <span className="mt-2 block text-xs font-bold text-red-600">{errors.address.message}</span>}
           </label>
           <Input id="postal_code" label="کد پستی" inputMode="numeric" error={errors.postal_code?.message} {...register("postal_code")} />

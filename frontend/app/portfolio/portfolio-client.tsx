@@ -97,17 +97,17 @@ export default function PortfolioClient() {
   }
 
   return (
-    <main className="bg-white">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-pink-50/70 via-white to-white">
+    <main className="bg-[#FAFAF8]">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-black text-[var(--primary)]">
+            <p className="text-sm font-black text-[#B2894C]">
               نمونه‌کارهای واقعی
             </p>
-            <h1 className="mt-4 text-3xl font-black leading-tight text-[var(--dark)] sm:text-5xl">
+            <h1 className="mt-4 text-3xl font-black leading-tight text-[#333230] sm:text-5xl">
               کیفیت چاپ و طراحی را قبل از سفارش ببین
             </h1>
-            <p className="mt-5 leading-8 text-gray-600">
+            <p className="mt-5 leading-8 text-[#77736D]">
               اینجا نمونه‌هایی از سفارش‌های انجام‌شده را می‌بینی؛ از ماگ و
               تیشرت تا پک‌های تبلیغاتی و هدیه‌های کاملا شخصی‌سازی‌شده.
             </p>
@@ -117,10 +117,10 @@ export default function PortfolioClient() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.55)]">
             <label
               htmlFor="portfolio-search"
-              className="text-sm font-black text-[var(--dark)]"
+              className="text-sm font-black text-[#333230]"
             >
               جستجوی نمونه‌کار
             </label>
@@ -129,16 +129,16 @@ export default function PortfolioClient() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="مثلا ماگ، برند، تولد، تیشرت"
-              className="mt-3 h-12 w-full rounded-lg border border-gray-200 px-4 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-pink-100"
+              className="mt-3 h-12 w-full rounded-xl border border-[#E3DED5] px-4 text-sm outline-none transition placeholder:text-[#A8A29A] focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
             />
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-black text-[var(--dark)]">نوع کار</p>
+          <div className="rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.55)]">
+            <p className="text-sm font-black text-[#333230]">نوع کار</p>
             <select
               value={workType}
               onChange={(event) => selectWorkType(event.target.value)}
-              className="mt-3 h-12 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm font-black text-gray-700 outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+              className="mt-3 h-12 w-full rounded-xl border border-[#E3DED5] bg-white px-4 text-sm font-black text-[#333230] outline-none transition focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
             >
               <option value="">همه نمونه‌کارها</option>
               {workTypeOptions.map((option) => (
@@ -152,16 +152,16 @@ export default function PortfolioClient() {
 
         <div
           ref={resultsRef}
-          className="mb-5 scroll-mt-28 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+          className="mb-5 scroll-mt-28 rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.55)]"
         >
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-black text-[var(--dark)]">
+              <p className="text-sm font-black text-[#333230]">
                 {count > 0
                   ? `${count.toLocaleString("fa-IR")} نمونه‌کار`
                   : "نمونه‌کاری یافت نشد"}
               </p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-[#77736D]">
                 برای دیدن جزئیات، روی هر نمونه‌کار کلیک کن.
               </p>
             </div>
@@ -175,7 +175,7 @@ export default function PortfolioClient() {
                   setDebouncedSearch("");
                   setPage(1);
                 }}
-                className="h-10 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                className="h-10 rounded-xl border border-[#E3DED5] px-4 text-sm font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] hover:text-[#333230]"
               >
                 پاک کردن فیلترها
               </button>
@@ -231,13 +231,13 @@ function PortfolioGridSkeleton() {
       {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={index}
-          className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+          className="overflow-hidden rounded-2xl border border-[#E3DED5] bg-white shadow-sm"
         >
-          <div className="aspect-square animate-pulse bg-gray-100" />
+          <div className="aspect-square animate-pulse bg-[#E3DED5]" />
           <div className="space-y-4 p-5">
-            <div className="h-5 w-24 animate-pulse rounded bg-gray-100" />
-            <div className="h-6 w-3/4 animate-pulse rounded bg-gray-100" />
-            <div className="h-12 animate-pulse rounded bg-gray-100" />
+            <div className="h-5 w-24 animate-pulse rounded bg-[#E3DED5]" />
+            <div className="h-6 w-3/4 animate-pulse rounded bg-[#E3DED5]" />
+            <div className="h-12 animate-pulse rounded bg-[#E3DED5]" />
           </div>
         </div>
       ))}
@@ -247,11 +247,11 @@ function PortfolioGridSkeleton() {
 
 function EmptyPortfolioState() {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
-      <h2 className="text-xl font-black text-[var(--dark)]">
+    <div className="rounded-2xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] px-6 py-16 text-center">
+      <h2 className="text-xl font-black text-[#333230]">
         نمونه‌کاری پیدا نشد
       </h2>
-      <p className="mx-auto mt-3 max-w-md leading-7 text-gray-600">
+      <p className="mx-auto mt-3 max-w-md leading-7 text-[#77736D]">
         عبارت جستجو یا نوع کار را تغییر بده تا نمونه‌کارهای بیشتری نمایش داده
         شود.
       </p>

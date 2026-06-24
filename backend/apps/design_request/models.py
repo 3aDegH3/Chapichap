@@ -51,9 +51,10 @@ class UploadedFile(models.Model):
 
 class DesignRequest(models.Model):
     class OrderType(models.TextChoices):
-        LOGO = "logo", "طراحی لوگو"
-        PRINT = "print", "طرح آماده چاپ"
+        PRINT = "print", "طرح آماده برای چاپ"
+        CUSTOM_PRINT = "custom_print", "طرح اختصاصی برای چاپ"
         GIFT = "gift", "هدیه اختصاصی"
+        CARICATURE = "caricature", "طراحی کاریکاتور"
         CONSULTING = "consulting", "مشاوره طراحی"
         OTHER = "other", "سایر"
 

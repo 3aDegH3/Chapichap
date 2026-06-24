@@ -81,10 +81,10 @@ export default function AccountNotificationsPage() {
 
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-black text-[var(--dark)]">اعلان‌ها</h2>
-          <p className="mt-2 text-sm font-bold text-gray-500">رویدادهای حساب، سفارش و پشتیبانی</p>
+          <h2 className="text-xl font-black text-[#333230]">اعلان‌ها</h2>
+          <p className="mt-2 text-sm font-bold text-[#77736D]">رویدادهای حساب، سفارش و پشتیبانی</p>
         </div>
         <Button type="button" variant="outline" onClick={() => void markAllRead()}>
           خواندن همه
@@ -94,9 +94,9 @@ export default function AccountNotificationsPage() {
       {error && <Alert variant="error">{error}</Alert>}
 
       {notifications.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-          <h3 className="text-xl font-black text-[var(--dark)]">اعلانی وجود ندارد</h3>
-          <p className="mx-auto mt-3 max-w-md leading-7 text-gray-600">
+        <div className="rounded-2xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] px-6 py-16 text-center">
+          <h3 className="text-xl font-black text-[#333230]">اعلانی وجود ندارد</h3>
+          <p className="mx-auto mt-3 max-w-md leading-7 text-[#77736D]">
             اعلان‌های مهم حساب کاربری در این بخش نمایش داده می‌شوند.
           </p>
         </div>
@@ -106,20 +106,20 @@ export default function AccountNotificationsPage() {
             <article
               key={notification.id}
               className={`rounded-2xl border p-5 shadow-sm ${
-                notification.is_read ? "border-gray-200 bg-white" : "border-sky-200 bg-sky-50"
+                notification.is_read ? "border-[#E3DED5] bg-white" : "border-[#D2AD70]/45 bg-[#F6F1E8]"
               }`}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h3 className="font-black text-[var(--dark)]">{notification.title}</h3>
-                  <p className="mt-2 text-sm font-bold leading-7 text-gray-600">{notification.message}</p>
-                  <p className="mt-2 text-xs font-bold text-gray-500">{formatDate(notification.created_at)}</p>
+                  <h3 className="font-black text-[#333230]">{notification.title}</h3>
+                  <p className="mt-2 text-sm font-bold leading-7 text-[#77736D]">{notification.message}</p>
+                  <p className="mt-2 text-xs font-bold text-[#77736D]">{formatDate(notification.created_at)}</p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   {notification.link && (
                     <Link
                       href={notification.link}
-                      className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-xs font-black text-[var(--dark)]"
+                      className="inline-flex h-10 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-4 text-xs font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#FAFAF8]"
                     >
                       مشاهده
                     </Link>
@@ -128,7 +128,7 @@ export default function AccountNotificationsPage() {
                     <button
                       type="button"
                       onClick={() => void markRead(notification.id)}
-                      className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--secondary)] px-4 text-xs font-black text-white"
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-[#D2AD70] px-4 text-xs font-black text-[#333230]"
                     >
                       خواندم
                     </button>

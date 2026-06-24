@@ -175,6 +175,7 @@ def create_order_from_cart(cart, checkout_data, user=None):
 
     order = Order.objects.create(
         order_number=generate_order_number(),
+        idempotency_key=(checkout_data.get("idempotency_key") or "").strip() or None,
         user=user if user and user.is_authenticated else None,
         session_key=locked_cart.session_key,
         receiver_name=checkout_data["receiver_name"],
@@ -189,7 +190,7 @@ def create_order_from_cart(cart, checkout_data, user=None):
         discount_amount=discount_amount,
         coupon_code=(checkout_data.get("coupon_code") or "").strip(),
         total_amount=total_amount,
-        status=Order.Status.PENDING_PAYMENT,
+        status=Order.Status.REGISTERED,
         notes=checkout_data.get("notes", ""),
     )
 
@@ -213,9 +214,9 @@ def create_order_from_cart(cart, checkout_data, user=None):
     OrderStatusHistory.objects.create(
         order=order,
         previous_status="",
-        new_status=Order.Status.PENDING_PAYMENT,
+        new_status=Order.Status.REGISTERED,
         title="سفارش ثبت شد",
-        description="سفارش شما ثبت شده و در انتظار پرداخت یا هماهنگی است.",
+        description="سفارش شما ثبت شده و برای بررسی اولیه در صف تیم چاپی چاپ قرار گرفت.",
         visible_to_customer=True,
         created_by=user if user and user.is_authenticated else None,
     )
