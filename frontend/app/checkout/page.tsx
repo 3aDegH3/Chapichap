@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,11 +30,11 @@ import {
   type PaymentMethod,
   type PaymentMethodCode,
 } from "@/lib/payment-api";
+import { siteInfo } from "@/lib/site-info";
 
 const CHECKOUT_STORAGE_KEY = "chapichap.checkout.v1";
-const PICKUP_ADDRESS = "تهران، مرکز چاپ چی چاپ؛ هماهنگی زمان مراجعه پس از ثبت سفارش انجام می‌شود.";
 const IN_PERSON_PAYMENT_INSTRUCTIONS =
-  "پس از ثبت سفارش، برای هماهنگی زمان پرداخت و تحویل با شما تماس گرفته می‌شود. سفارش تا زمان تأیید پرداخت در وضعیت در انتظار پرداخت باقی می‌ماند.";
+  "سفارش بدون پرداخت آنلاین ثبت می‌شود و تیم چاپی چاپ برای هماهنگی پرداخت و ادامه فرایند با شما تماس می‌گیرد.";
 
 const checkoutSchema = z.object({
   receiver_name: z.string().trim().min(2, "نام و نام خانوادگی را کامل وارد کن."),
@@ -51,7 +51,7 @@ const checkoutSchema = z.object({
     .trim()
     .regex(/^[0-9۰-۹٠-٩]{10}$/, "کد پستی باید ۱۰ رقم باشد."),
   delivery_method: z.enum(["SHIPPING", "PICKUP"]),
-  payment_method: z.enum(["IN_PERSON"]),
+  payment_method: z.enum(["IN_PERSON", "ONLINE_GATEWAY", "BANK_TRANSFER", "CASH_ON_DELIVERY"]),
   save_address: z.boolean(),
   address_title: z.string().trim().optional(),
   coupon_code: z.string().trim().optional(),
@@ -101,10 +101,37 @@ function toCheckoutItems(
   }));
 }
 
+function previewToCheckoutItems(preview: CheckoutPreview | null): CheckoutCartItemPayload[] {
+  return (
+    preview?.items.map((item) => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+    })) || []
+  );
+}
+
+function createPaymentIdempotencyKey(orderId: number, method: PaymentMethodCode) {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `payment:${orderId}:${method}:${randomPart}`;
+}
+
+function createOrderIdempotencyKey() {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `order:${randomPart}`;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { clearCart, isReady, items, totalItems } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [initialDraft] = useState<CheckoutFormValues | null>(readCheckoutDraft);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
@@ -114,8 +141,10 @@ export default function CheckoutPage() {
   const [offerError, setOfferError] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCompletingOrder, setIsCompletingOrder] = useState(false);
   const [error, setError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const orderIdempotencyKeyRef = useRef("");
 
   const {
     control,
@@ -135,6 +164,11 @@ export default function CheckoutPage() {
   const couponCode = watchedValues.coupon_code || "";
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) || null;
   const shouldShowAddressForm = addressMode === "new" || !isAuthenticated || addresses.length === 0;
+  const selectedPaymentMethod =
+    paymentMethods.find((method) => method.code === paymentMethod) || null;
+  const isPaymentMethodActive = selectedPaymentMethod
+    ? selectedPaymentMethod.is_active
+    : paymentMethod === "IN_PERSON";
 
   const loadPreview = useCallback(async (method: CheckoutDeliveryMethod) => {
     setIsLoading(true);
@@ -219,7 +253,12 @@ export default function CheckoutPage() {
   }, [addressMode, applyAddress, isAuthenticated, selectedAddressId]);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (isAuthLoading || !isReady || isCompletingOrder) return;
+
+    if (!isAuthenticated) {
+      router.replace("/login?next=/checkout");
+      return;
+    }
 
     if (totalItems === 0) {
       router.replace("/cart");
@@ -233,7 +272,18 @@ export default function CheckoutPage() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [deliveryMethod, isReady, loadAddresses, loadPaymentMethods, loadPreview, router, totalItems]);
+  }, [
+    deliveryMethod,
+    isCompletingOrder,
+    isAuthenticated,
+    isAuthLoading,
+    isReady,
+    loadAddresses,
+    loadPaymentMethods,
+    loadPreview,
+    router,
+    totalItems,
+  ]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -241,6 +291,19 @@ export default function CheckoutPage() {
       JSON.stringify({ ...defaultCheckoutValues, ...watchedValues })
     );
   }, [watchedValues]);
+
+  useEffect(() => {
+    if (paymentMethods.length === 0) return;
+
+    const activeSelectedMethod = paymentMethods.some(
+      (method) => method.code === paymentMethod && method.is_active
+    );
+
+    if (!activeSelectedMethod) {
+      const fallbackMethod = paymentMethods.find((method) => method.is_active)?.code || "IN_PERSON";
+      setValue("payment_method", fallbackMethod, { shouldValidate: true });
+    }
+  }, [paymentMethod, paymentMethods, setValue]);
 
   async function applyCoupon() {
     if (!preview || !couponCode.trim()) {
@@ -268,19 +331,42 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      const orderItems = previewToCheckoutItems(preview);
+      if (orderItems.length === 0) {
+        setSubmitError("آیتم‌های سفارش آماده نیستند. یک بار صفحه را تازه‌سازی کن یا به سبد خرید برگرد.");
+        return;
+      }
+
+      const { payment_method, ...orderValues } = values;
+      if (!orderIdempotencyKeyRef.current) {
+        orderIdempotencyKeyRef.current = createOrderIdempotencyKey();
+      }
+
       const order = await createOrder({
+        idempotency_key: orderIdempotencyKeyRef.current,
         address_id: selectedAddressId,
-        ...values,
+        ...orderValues,
         coupon_code: offer ? values.coupon_code?.trim() : "",
         notes: values.notes || "",
-        items: toCheckoutItems(items),
+        items: orderItems,
       });
 
+      setIsCompletingOrder(true);
       window.localStorage.removeItem(CHECKOUT_STORAGE_KEY);
       clearCart();
 
       try {
-        const payment = await initializePayment(order.id, values.payment_method);
+        const payment = await initializePayment(
+          order.id,
+          payment_method,
+          createPaymentIdempotencyKey(order.id, payment_method)
+        );
+
+        if (payment.next_action.type === "REDIRECT" && payment.next_action.url) {
+          router.replace(payment.next_action.url);
+          return;
+        }
+
         router.replace(`/order/success?order=${order.id}&payment=${payment.id}`);
       } catch (paymentError) {
         router.replace(
@@ -290,6 +376,7 @@ export default function CheckoutPage() {
         );
       }
     } catch (orderError) {
+      setIsCompletingOrder(false);
       const message = getApiErrorMessage(orderError);
       setSubmitError(message);
       router.push(`/order/error?message=${encodeURIComponent(message)}`);
@@ -310,7 +397,7 @@ export default function CheckoutPage() {
                 مرور نهایی سفارش
               </h1>
               <p className="mt-4 max-w-2xl text-sm font-medium leading-8 text-[#77736D]">
-                مبلغ‌ها از سمت سرور محاسبه و تأیید می‌شوند تا سفارش با قیمت درست ثبت شود.
+                اطلاعات گیرنده، روش تحویل و هزینه ارسال در سرور بررسی می‌شود تا سفارش آزمایشی با جزئیات درست ثبت شود.
               </p>
             </div>
             <Link
@@ -460,7 +547,7 @@ export default function CheckoutPage() {
                         <input
                           {...register("province")}
                           className={inputClass(Boolean(errors.province))}
-                          placeholder="تهران"
+                          placeholder="اصفهان"
                         />
                       </CheckoutField>
 
@@ -468,7 +555,7 @@ export default function CheckoutPage() {
                         <input
                           {...register("city")}
                           className={inputClass(Boolean(errors.city))}
-                          placeholder="تهران"
+                          placeholder="اصفهان"
                         />
                       </CheckoutField>
 
@@ -556,7 +643,7 @@ export default function CheckoutPage() {
 
                 {deliveryMethod === "PICKUP" && (
                   <div className="mt-4 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4 text-sm font-bold leading-7 text-[#B2894C]">
-                    {PICKUP_ADDRESS}
+                    محل تحویل حضوری: {siteInfo.officeAddress}. {siteInfo.officeVisitNote}
                   </div>
                 )}
               </section>
@@ -594,7 +681,7 @@ export default function CheckoutPage() {
 
         <aside className="h-fit rounded-2xl border border-[#D8CFC0] bg-white p-5 shadow-[0_20px_55px_-38px_rgba(51,50,48,0.75)] lg:sticky lg:top-28">
           <p className="text-sm font-black text-[#B2894C]">مرحله نهایی</p>
-          <h2 className="mt-2 text-xl font-black text-[#333230]">خلاصه پرداخت</h2>
+          <h2 className="mt-2 text-xl font-black text-[#333230]">خلاصه سفارش</h2>
 
           {isAuthenticated && (
             <div className="mt-5 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4">
@@ -646,21 +733,21 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-5 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4 text-xs font-bold leading-6 text-[#77736D]">
-            اطلاعات گیرنده و روش تحویل به صورت موقت ذخیره می‌شود و در مرحله ساخت سفارش استفاده خواهد شد.
+            پس از ثبت سفارش، شماره سفارش یکتا ساخته می‌شود و وضعیت سفارش از پنل کاربری قابل پیگیری است.
           </div>
 
           <div className="mt-6 grid gap-3">
             <button
               type="button"
-              disabled={!isValid || !preview || isSubmitting || isLoading}
+              disabled={!isValid || !preview || !isPaymentMethodActive || isSubmitting || isLoading || isCompletingOrder}
               onClick={() => void handleSubmit(submitOrder)()}
               className={`inline-flex h-12 cursor-not-allowed items-center justify-center rounded-xl px-6 text-sm font-black ${
-                isValid && preview && !isSubmitting && !isLoading
+                isValid && preview && isPaymentMethodActive && !isSubmitting && !isLoading && !isCompletingOrder
                   ? "cursor-pointer bg-[#D2AD70] text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
                   : "bg-[#E3DED5] text-[#77736D]"
               }`}
             >
-              {isSubmitting ? "در حال ثبت سفارش..." : "ثبت سفارش"}
+              {isSubmitting || isCompletingOrder ? "در حال ثبت سفارش..." : "ثبت سفارش"}
             </button>
             {submitError && (
               <p className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-bold leading-6 text-red-700">

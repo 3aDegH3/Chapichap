@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import OrderRoadmap from "@/components/account/OrderRoadmap";
 import Alert from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api";
 import { getAccountOrder } from "@/lib/account-api";
@@ -92,8 +93,14 @@ export default function AccountOrderDetailPage() {
           </div>
         </section>
 
+        <OrderRoadmap
+          status={order.status}
+          statusLabel={order.status_label}
+          deliveryMethod={order.delivery_method}
+        />
+
         <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-black text-[#333230]">Timeline سفارش</h2>
+          <h2 className="text-xl font-black text-[#333230]">رویدادهای سفارش</h2>
           {order.status_history.length === 0 ? (
             <p className="mt-5 rounded-xl bg-[#FAFAF8] p-4 text-sm font-bold text-[#77736D]">
               هنوز رویدادی برای این سفارش ثبت نشده است.
@@ -169,6 +176,14 @@ export default function AccountOrderDetailPage() {
           <StatusRow label="پرداخت" value={order.payment?.status_label || "بدون پرداخت"} tone="payment" />
           <StatusRow label="روش پرداخت" value={order.payment?.method_label || "-"} tone="neutral" />
         </div>
+
+        {order.payment && (
+          <div className="mt-5 space-y-3 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4 text-sm font-bold text-[#77736D]">
+            <SummaryLine label="شماره پیگیری" value={order.payment.tracking_code || "-"} />
+            <SummaryLine label="رسید پرداخت" value={order.payment.receipt_number || "-"} />
+            <SummaryLine label="ارجاع درگاه" value={order.payment.provider_reference || "-"} />
+          </div>
+        )}
 
         <div className="mt-5 space-y-3 border-t border-[#E3DED5] pt-5 text-sm font-bold text-[#77736D]">
           <SummaryLine label="جمع کالاها" value={`${formatPrice(order.subtotal)} تومان`} />

@@ -6,10 +6,10 @@ import { useEffect, useState } from "react";
 
 import { getApiErrorMessage } from "@/lib/api";
 import { getOrder, type Order } from "@/lib/checkout-api";
+import { siteInfo } from "@/lib/site-info";
 
-const PICKUP_ADDRESS = "تهران، مرکز چاپ چی چاپ؛ هماهنگی زمان مراجعه پس از ثبت سفارش انجام می‌شود.";
 const IN_PERSON_PAYMENT_INSTRUCTIONS =
-  "پس از ثبت سفارش، برای هماهنگی زمان پرداخت و تحویل با شما تماس گرفته می‌شود. سفارش تا زمان تأیید پرداخت در وضعیت در انتظار پرداخت باقی می‌ماند.";
+  "سفارش بدون پرداخت آنلاین ثبت شد و تیم چاپی چاپ برای هماهنگی پرداخت و ادامه فرایند با شما تماس می‌گیرد.";
 
 function formatPrice(price: number | string) {
   return new Intl.NumberFormat("fa-IR").format(Number(price) || 0);
@@ -91,26 +91,32 @@ export default function OrderSuccessClient() {
           کد سفارش {order.order_number}
         </h1>
         <p className="mt-4 leading-8 text-[#77736D]">
-          سفارش با وضعیت «{order.status_label}» و پرداخت با وضعیت «
-          {order.payment?.status_label || "در انتظار پرداخت"}» ثبت شد.
+          سفارش با وضعیت «{order.status_label}» ثبت شد. وضعیت پرداخت و مراحل آماده‌سازی از پنل کاربری قابل پیگیری است.
         </p>
 
         <div className="mt-8 grid gap-3 rounded-2xl border border-[#E3DED5] bg-white p-5 text-right shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
           <SummaryRow label="گیرنده" value={order.receiver_name} />
           <SummaryRow label="روش تحویل" value={order.delivery_method_label} />
           <SummaryRow label="روش پرداخت" value={order.payment?.method_label || "پرداخت حضوری"} />
+          <SummaryRow label="وضعیت پرداخت" value={order.payment?.status_label || "در انتظار پرداخت"} />
+          {order.payment?.tracking_code && (
+            <SummaryRow label="شماره پیگیری" value={order.payment.tracking_code} />
+          )}
+          {order.payment?.receipt_number && (
+            <SummaryRow label="رسید پرداخت" value={order.payment.receipt_number} />
+          )}
           <SummaryRow label="جمع کالاها" value={`${formatPrice(order.subtotal)} تومان`} />
           <SummaryRow label="هزینه ارسال" value={`${formatPrice(order.shipping_cost)} تومان`} />
           <SummaryRow label="مبلغ نهایی" value={`${formatPrice(order.total_amount)} تومان`} />
         </div>
 
         <div className="mt-5 rounded-2xl border border-[#D2AD70]/45 bg-[#F6F1E8] p-5 text-right">
-          <p className="text-base font-black text-[#333230]">در انتظار پرداخت حضوری</p>
+          <p className="text-base font-black text-[#333230]">هماهنگی پرداخت و ادامه سفارش</p>
           <p className="mt-3 text-sm font-bold leading-7 text-[#77736D]">
             {IN_PERSON_PAYMENT_INSTRUCTIONS}
           </p>
           <p className="mt-3 text-sm font-bold leading-7 text-[#77736D]">
-            محل هماهنگی/پرداخت: {PICKUP_ADDRESS}
+            محل هماهنگی/پرداخت حضوری: {siteInfo.officeAddress}
           </p>
         </div>
 

@@ -52,11 +52,14 @@ class CartItem(models.Model):
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        PENDING_PAYMENT = "PENDING_PAYMENT", "در انتظار پرداخت"
-        PAID = "PAID", "پرداخت‌شده"
-        PROCESSING = "PROCESSING", "در حال آماده‌سازی"
-        READY = "READY", "آماده تحویل"
-        COMPLETED = "COMPLETED", "تکمیل‌شده"
+        REGISTERED = "REGISTERED", "ثبت‌شده"
+        REVIEWING = "REVIEWING", "در حال بررسی"
+        WAITING_DESIGN_APPROVAL = "WAITING_DESIGN_APPROVAL", "در انتظار تأیید طرح"
+        READY_FOR_PRINT = "READY_FOR_PRINT", "آماده چاپ"
+        PRINTING = "PRINTING", "در حال چاپ"
+        READY_TO_SHIP = "READY_TO_SHIP", "آماده ارسال"
+        SHIPPED = "SHIPPED", "ارسال‌شده"
+        DELIVERED = "DELIVERED", "تحویل‌شده"
         CANCELLED = "CANCELLED", "لغوشده"
 
     class DeliveryMethod(models.TextChoices):
@@ -64,6 +67,7 @@ class Order(models.Model):
         PICKUP = "PICKUP", "تحویل حضوری"
 
     order_number = models.CharField(max_length=32, unique=True)
+    idempotency_key = models.CharField(max_length=120, unique=True, blank=True, null=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -91,7 +95,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=24,
         choices=Status.choices,
-        default=Status.PENDING_PAYMENT,
+        default=Status.REGISTERED,
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

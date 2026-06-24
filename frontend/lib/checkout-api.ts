@@ -28,6 +28,7 @@ export type CheckoutCartItemPayload = {
 };
 
 export type CreateOrderPayload = {
+  idempotency_key?: string;
   address_id?: number | null;
   receiver_name: string;
   phone: string;
@@ -84,6 +85,10 @@ export type Order = {
     status: string;
     status_label: string;
     provider: string;
+    provider_reference: string | null;
+    tracking_code: string;
+    receipt_number: string;
+    failure_reason: string;
     paid_at: string | null;
     created_at: string;
   } | null;

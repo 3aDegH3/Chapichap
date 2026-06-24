@@ -12,18 +12,20 @@ class Payment(models.Model):
         CASH_ON_DELIVERY = "CASH_ON_DELIVERY", "پرداخت هنگام تحویل"
 
     class Status(models.TextChoices):
-        PENDING = "PENDING", "در انتظار پرداخت"
-        PAID = "PAID", "پرداخت‌شده"
-        FAILED = "FAILED", "ناموفق"
-        CANCELLED = "CANCELLED", "لغوشده"
-        REFUNDED = "REFUNDED", "بازپرداخت‌شده"
+        PENDING = "pending", "در انتظار پرداخت"
+        SUCCESSFUL = "successful", "موفق"
+        FAILED = "failed", "ناموفق"
+        CANCELED = "canceled", "لغوشده"
+        EXPIRED = "expired", "منقضی‌شده"
 
     class Provider(models.TextChoices):
         MANUAL = "MANUAL", "ثبت دستی"
+        MOCK = "MOCK", "درگاه آزمایشی"
         GATEWAY = "GATEWAY", "درگاه آنلاین"
         BANK = "BANK", "بانک"
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
+    order_number = models.CharField(max_length=32, db_index=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=24, choices=Method.choices)
     provider = models.CharField(max_length=24, choices=Provider.choices, default=Provider.MANUAL)
@@ -33,6 +35,8 @@ class Payment(models.Model):
         default=Status.PENDING,
     )
     provider_reference = models.CharField(max_length=120, blank=True, null=True)
+    tracking_code = models.CharField(max_length=120, blank=True)
+    receipt_number = models.CharField(max_length=120, blank=True)
     failure_reason = models.TextField(blank=True)
     paid_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,3 +68,34 @@ class PaymentStatusLog(models.Model):
 
     def __str__(self):
         return f"{self.payment_id}: {self.from_status} -> {self.to_status}"
+
+
+class Transaction(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "در انتظار پرداخت"
+        SUCCESSFUL = "successful", "موفق"
+        FAILED = "failed", "ناموفق"
+        CANCELED = "canceled", "لغوشده"
+        EXPIRED = "expired", "منقضی‌شده"
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="transactions")
+    order_number = models.CharField(max_length=32, db_index=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    gateway = models.CharField(max_length=64, default="mock")
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.PENDING)
+    idempotency_key = models.CharField(max_length=120, unique=True, blank=True, null=True)
+    gateway_reference = models.CharField(max_length=120, unique=True, blank=True, null=True)
+    tracking_code = models.CharField(max_length=120, blank=True)
+    receipt_number = models.CharField(max_length=120, blank=True)
+    failure_reason = models.TextField(blank=True)
+    request_payload = models.JSONField(default=dict, blank=True)
+    response_payload = models.JSONField(default=dict, blank=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.order_number} - {self.gateway} - {self.status}"

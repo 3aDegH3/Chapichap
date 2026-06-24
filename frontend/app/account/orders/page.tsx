@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import Alert from "@/components/ui/Alert";
+import OrderRoadmap from "@/components/account/OrderRoadmap";
 import { getApiErrorMessage } from "@/lib/api";
 import { getAccountOrders } from "@/lib/account-api";
 import type { Order } from "@/lib/checkout-api";
@@ -106,6 +107,13 @@ export default function AccountOrdersPage() {
             <SummaryPill label="روش تحویل" value={order.delivery_method_label} />
             <SummaryPill label="مبلغ نهایی" value={`${formatPrice(order.total_amount)} تومان`} />
           </div>
+
+          <OrderRoadmap
+            status={order.status}
+            statusLabel={order.status_label}
+            deliveryMethod={order.delivery_method}
+            compact
+          />
         </article>
       ))}
     </section>

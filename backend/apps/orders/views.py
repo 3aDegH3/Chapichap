@@ -183,6 +183,26 @@ class OrderListCreateAPIView(APIView):
     def post(self, request):
         serializer = OrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        idempotency_key = (serializer.validated_data.get("idempotency_key") or "").strip()
+
+        if idempotency_key:
+            existing_order_queryset = Order.objects.filter(idempotency_key=idempotency_key)
+            if request.user.is_authenticated:
+                existing_order_queryset = existing_order_queryset.filter(user=request.user)
+            elif request.session.session_key:
+                existing_order_queryset = existing_order_queryset.filter(
+                    session_key=request.session.session_key
+                )
+            else:
+                existing_order_queryset = existing_order_queryset.none()
+
+            existing_order = existing_order_queryset.first()
+            if existing_order:
+                return Response(
+                    OrderSerializer(existing_order, context={"request": request}).data,
+                    status=status.HTTP_200_OK,
+                )
+
         cart = get_or_create_cart(request)
         sync_cart_from_payload(cart, serializer.validated_data.get("items"))
 
