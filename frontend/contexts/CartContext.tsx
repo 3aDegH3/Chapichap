@@ -135,13 +135,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [applyApiCart]);
 
   useEffect(() => {
-    const localItems = readStoredCart();
-    itemsRef.current = localItems;
-    setItems(localItems);
+    const timeout = window.setTimeout(() => {
+      const localItems = readStoredCart();
+      itemsRef.current = localItems;
+      setItems(localItems);
 
-    void syncLocalItemsWithApi(localItems)
-      .catch(() => undefined)
-      .finally(() => setIsHydrated(true));
+      void syncLocalItemsWithApi(localItems)
+        .catch(() => undefined)
+        .finally(() => setIsHydrated(true));
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [syncLocalItemsWithApi]);
 
   useEffect(() => {

@@ -31,16 +31,21 @@ const ALLOWED_FILE_TYPES = [
 ];
 
 const orderTypes = [
+  { value: "print", label: "طرح آماده برای چاپ", hint: "برای بررسی و تنظیم فایل آماده" },
+  { value: "custom_print", label: "طرح اختصاصی برای چاپ", hint: "برای تبدیل ایده خام به فایل چاپی" },
   { value: "gift", label: "هدیه اختصاصی", hint: "برای ماگ، تیشرت و هدیه شخصی" },
-  { value: "print", label: "طرح آماده چاپ", hint: "برای آماده‌سازی فایل چاپی" },
-  { value: "logo", label: "طراحی لوگو", hint: "برای هویت بصری و برند" },
+  { value: "caricature", label: "طراحی کاریکاتور", hint: "برای هدیه‌های تصویری و خاص" },
   { value: "consulting", label: "مشاوره طراحی", hint: "برای انتخاب مسیر درست" },
   { value: "other", label: "سایر", hint: "برای ایده‌های متفاوت" },
 ] as const;
 
+function isOrderTypeValue(value: string | null): value is DesignRequestFormValues["order_type"] {
+  return orderTypes.some((item) => item.value === value);
+}
+
 const designRequestSchema = z.object({
   product_id: z.number().nullable().optional(),
-  order_type: z.enum(["gift", "print", "logo", "consulting", "other"]),
+  order_type: z.enum(["print", "custom_print", "gift", "caricature", "consulting", "other"]),
   description: z
     .string()
     .trim()
@@ -70,7 +75,7 @@ type DraftPayload = {
 
 const defaultValues: DesignRequestFormValues = {
   product_id: null,
-  order_type: "gift",
+  order_type: "print",
   description: "",
   uploaded_file_id: null,
   contact_name: "",
@@ -110,6 +115,7 @@ function isImageFile(file: UploadedFileResponse) {
 export default function DesignRequestClient() {
   const searchParams = useSearchParams();
   const productSlug = searchParams.get("product");
+  const orderTypeParam = searchParams.get("type");
 
   const [step, setStep] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -149,18 +155,25 @@ export default function DesignRequestClient() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const draft = readStoredDraft();
+      const nextValues = {
+        ...defaultValues,
+        ...(draft?.values || {}),
+        ...(isOrderTypeValue(orderTypeParam) ? { order_type: orderTypeParam } : {}),
+      };
 
       if (draft) {
-        reset({ ...defaultValues, ...draft.values });
+        reset(nextValues);
         setUploadedFile(draft.uploadedFile);
         setSelectedProduct(draft.selectedProduct);
+      } else if (isOrderTypeValue(orderTypeParam)) {
+        reset(nextValues);
       }
 
       setHasLoadedDraft(true);
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [reset]);
+  }, [orderTypeParam, reset]);
 
   useEffect(() => {
     if (!productSlug) return;

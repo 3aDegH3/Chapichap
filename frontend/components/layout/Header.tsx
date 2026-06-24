@@ -14,7 +14,8 @@ const navItems = [
   { href: "/products", label: "فروشگاه" },
   { href: "/portfolio", label: "نمونه‌کارها" },
   { href: "/design-request", label: "طراحی اختصاصی" },
-  { href: "/account/orders", label: "سفارش‌ها" },
+  { href: "/about", label: "درباره ما" },
+  { href: "/contact", label: "تماس با ما" },
 ];
 
 function isNavActive(pathname: string, href: string) {
@@ -36,7 +37,8 @@ export default function Header() {
   const shouldShowCartCount = hasMounted && totalItems > 0;
 
   useEffect(() => {
-    setHasMounted(true);
+    const timeout = window.setTimeout(() => setHasMounted(true), 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -51,7 +53,8 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    setIsOpen(false);
+    const timeout = window.setTimeout(() => setIsOpen(false), 0);
+    return () => window.clearTimeout(timeout);
   }, [pathname]);
 
   return (
