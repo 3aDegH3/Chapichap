@@ -1,0 +1,17 @@
+:root {
+  --primary: #B2894C;
+  --secondary: #D2AD70;
+  --accent: #F2EEE6;
+  --dark: #333230;
+
+  --bg: #FAFAF8;
+  --text: #333230;
+
+  --card: #ffffff;
+  --border: #E3DED5;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
