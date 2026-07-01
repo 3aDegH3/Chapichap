@@ -18,7 +18,7 @@ import {
   updateCartItem,
   type ApiCart,
 } from "@/lib/cart-api";
-import type { Product } from "@/lib/products-api";
+import { clampProductQuantity, isProductAvailable, type Product } from "@/lib/products-api";
 
 export type CartItem = {
   product: Product;
@@ -98,7 +98,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const hasUserMutatedRef = useRef(false);
 
   const applyApiCart = useCallback((cart: ApiCart) => {
-    setItems(cartItemsFromApi(cart));
+    const nextItems = cartItemsFromApi(cart);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }, []);
 
   const syncLocalItemsWithApi = useCallback(async (localItems: CartItem[]) => {
@@ -110,7 +112,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     const mergedCartItems = mergeCartItems(serverCart, localItems);
-    if (!hasUserMutatedRef.current) setItems(mergedCartItems);
+    if (!hasUserMutatedRef.current) {
+      itemsRef.current = mergedCartItems;
+      setItems(mergedCartItems);
+    }
 
     await Promise.all(
       localItems.map((item) => {
@@ -163,7 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totals = useMemo(() => {
     return items.reduce(
       (result, item) => {
-        const price = Number(item.product.price) || 0;
+        const price = Number(item.product.effective_price || item.product.price) || 0;
         result.totalItems += item.quantity;
         result.totalPrice += price * item.quantity;
         return result;
@@ -185,51 +190,79 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const addItem = useCallback((product: Product, quantity = 1) => {
-    const safeQuantity = Math.max(1, quantity);
+    if (!isProductAvailable(product)) {
+      showToast("این محصول فعلا موجود نیست.");
+      return;
+    }
+
+    const requestedQuantity = Math.max(1, Math.floor(Number(quantity) || 1));
+    const currentItems = itemsRef.current;
+    const existingItem = currentItems.find((item) => item.product.id === product.id);
+    const currentQuantity = existingItem?.quantity || 0;
+    const nextQuantity = clampProductQuantity(product, currentQuantity + requestedQuantity);
+    const quantityToAdd = nextQuantity - currentQuantity;
+
+    if (quantityToAdd <= 0) {
+      showToast("تعداد انتخاب‌شده از موجودی محصول بیشتر است.");
+      return;
+    }
+
+    const nextItems = existingItem
+      ? currentItems.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: nextQuantity } : item
+        )
+      : [...currentItems, { product, quantity: nextQuantity }];
+
     hasUserMutatedRef.current = true;
-
-    setItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.product.id === product.id);
-
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + safeQuantity }
-            : item
-        );
-      }
-
-      return [...currentItems, { product, quantity: safeQuantity }];
-    });
+    itemsRef.current = nextItems;
+    setItems(nextItems);
 
     showToast("محصول به سبد خرید اضافه شد.");
     runServerUpdate(
-      addToCart(product.id, safeQuantity),
+      addToCart(product.id, quantityToAdd),
       "محصول در همین دستگاه ذخیره شد؛ اتصال سرور برقرار نیست."
     );
   }, [runServerUpdate, showToast]);
 
   const updateQuantity = useCallback((productId: number, quantity: number) => {
-    const safeQuantity = Math.max(0, quantity);
-    hasUserMutatedRef.current = true;
+    const currentItems = itemsRef.current;
+    const existingItem = currentItems.find((item) => item.product.id === productId);
 
-    setItems((currentItems) =>
+    if (!existingItem) return;
+
+    const requestedQuantity = Math.max(0, Math.floor(Number(quantity) || 0));
+    const safeQuantity = clampProductQuantity(existingItem.product, requestedQuantity);
+
+    if (requestedQuantity > safeQuantity) {
+      showToast(
+        safeQuantity > 0
+          ? "حداکثر تعداد قابل سفارش همین موجودی فعلی است."
+          : "این محصول فعلا قابل سفارش نیست."
+      );
+    }
+
+    const nextItems =
       safeQuantity === 0
         ? currentItems.filter((item) => item.product.id !== productId)
         : currentItems.map((item) =>
             item.product.id === productId ? { ...item, quantity: safeQuantity } : item
-          )
-    );
+          );
+
+    hasUserMutatedRef.current = true;
+    itemsRef.current = nextItems;
+    setItems(nextItems);
 
     runServerUpdate(
-      updateCartItem(productId, safeQuantity),
+      safeQuantity === 0 ? removeCartItem(productId) : updateCartItem(productId, safeQuantity),
       "تغییر تعداد محلی ذخیره شد؛ اتصال سرور برقرار نیست."
     );
-  }, [runServerUpdate]);
+  }, [runServerUpdate, showToast]);
 
   const removeItem = useCallback((productId: number) => {
+    const nextItems = itemsRef.current.filter((item) => item.product.id !== productId);
     hasUserMutatedRef.current = true;
-    setItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
+    itemsRef.current = nextItems;
+    setItems(nextItems);
     showToast("آیتم از سبد خرید حذف شد.");
     runServerUpdate(
       removeCartItem(productId),
@@ -240,6 +273,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => {
     const currentItems = itemsRef.current;
     hasUserMutatedRef.current = true;
+    itemsRef.current = [];
     setItems([]);
     showToast("سبد خرید خالی شد.");
     runServerUpdate(

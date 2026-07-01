@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { useCart } from "@/contexts/CartContext";
-import type { Product } from "@/lib/products-api";
+import { getProductStockLimit, isProductAvailable, type Product } from "@/lib/products-api";
 
 function formatPrice(price: string) {
   return new Intl.NumberFormat("fa-IR").format(Number(price));
@@ -11,6 +11,8 @@ function formatPrice(price: string) {
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const stockLimit = getProductStockLimit(product);
+  const isAvailable = isProductAvailable(product);
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-[#E3DED5] bg-white shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] transition duration-300 hover:-translate-y-1 hover:border-[#D2AD70] hover:shadow-[0_22px_55px_-36px_rgba(51,50,48,0.75)]">
@@ -37,9 +39,37 @@ export default function ProductCard({ product }: { product: Product }) {
               {product.category.title}
             </span>
           )}
+
+          <span
+            className={[
+              "absolute bottom-3 right-3 rounded-lg border px-3 py-1 text-xs font-black shadow-sm backdrop-blur",
+              isAvailable
+                ? "border-emerald-100 bg-white/90 text-emerald-700"
+                : "border-red-100 bg-white/90 text-red-600",
+            ].join(" ")}
+          >
+            {isAvailable
+              ? stockLimit === null
+                ? "موجود"
+                : `موجودی ${stockLimit.toLocaleString("fa-IR")}`
+              : "ناموجود"}
+          </span>
         </div>
 
         <div className="p-5">
+          <div className="mb-3 flex flex-wrap gap-2">
+            {product.product_type_label && (
+              <span className="rounded-lg bg-[#F6F1E8] px-2.5 py-1 text-xs font-black text-[#B2894C]">
+                {product.product_type_label}
+              </span>
+            )}
+            {product.gift_usage_label && (
+              <span className="rounded-lg bg-[#FAFAF8] px-2.5 py-1 text-xs font-bold text-[#77736D]">
+                {product.gift_usage_label}
+              </span>
+            )}
+          </div>
+
           <h2 className="line-clamp-1 text-lg font-black text-[#333230] transition group-hover:text-[#B2894C]">
             {product.title}
           </h2>
@@ -54,8 +84,18 @@ export default function ProductCard({ product }: { product: Product }) {
             <div>
               <p className="text-xs font-bold text-[#77736D]">شروع قیمت</p>
               <p className="mt-1 text-lg font-black text-[#333230]">
-                {formatPrice(product.price)} تومان
+                {formatPrice(product.effective_price || product.price)} تومان
               </p>
+              {product.has_active_discount && (
+                <p className="mt-1 text-xs font-bold text-[#9A948C] line-through">
+                  {formatPrice(product.price)} تومان
+                </p>
+              )}
+              {product.preparation_time && (
+                <p className="mt-1 text-xs font-bold text-[#77736D]">
+                  آماده‌سازی: {product.preparation_time}
+                </p>
+              )}
             </div>
 
             <span className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#333230] px-4 text-sm font-black text-white transition group-hover:bg-[#B2894C]">
@@ -69,9 +109,15 @@ export default function ProductCard({ product }: { product: Product }) {
         <button
           type="button"
           onClick={() => addItem(product)}
-          className="h-11 rounded-xl bg-[#D2AD70] px-3 text-sm font-black text-[#333230] transition hover:bg-[#B2894C]"
+          disabled={!isAvailable}
+          className={[
+            "h-11 rounded-xl px-3 text-sm font-black transition",
+            isAvailable
+              ? "bg-[#D2AD70] text-[#333230] hover:bg-[#B2894C]"
+              : "cursor-not-allowed bg-[#E3DED5] text-[#9A948C]",
+          ].join(" ")}
         >
-          افزودن به سبد
+          {isAvailable ? "افزودن به سبد" : "ناموجود"}
         </button>
         <Link
           href={`/design-request?product=${product.slug}`}

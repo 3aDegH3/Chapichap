@@ -9,9 +9,38 @@
   --background: #fafaf8;
   --foreground: #333230;
 
-  --font-primary: var(--font-vazirmatn, Tahoma), Tahoma, Arial, sans-serif;
+  --font-primary: var(--font-zar, Tahoma), Tahoma, Arial, sans-serif;
+
   --font-sans: var(--font-primary);
   --default-font-family: var(--font-primary);
+
+  /*
+   * B Zar has a noticeably smaller visual body than modern UI fonts.
+   * This optical scale keeps Tailwind's typography hierarchy intact while
+   * making Persian copy readable across the storefront and admin panel.
+   */
+  --text-xs: 1rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 1.125rem;
+  --text-sm--line-height: 1.65;
+  --text-base: 1.25rem;
+  --text-base--line-height: 1.7;
+  --text-lg: 1.375rem;
+  --text-lg--line-height: 1.65;
+  --text-xl: 1.5625rem;
+  --text-xl--line-height: 1.55;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.5;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.4;
+  --text-4xl: 2.75rem;
+  --text-4xl--line-height: 1.35;
+  --text-5xl: 3.625rem;
+  --text-5xl--line-height: 1.25;
+  --text-6xl: 4.5rem;
+  --text-6xl--line-height: 1.2;
+  --text-7xl: 5.375rem;
+  --text-7xl--line-height: 1.15;
 
   --font-weight-medium: 450;
   --font-weight-bold: 650;
@@ -38,9 +67,9 @@ body {
 
   font-family: var(--font-primary);
 
-  font-size: 16px;
+  font-size: var(--text-base);
   font-weight: 400;
-  line-height: 1.8;
+  line-height: var(--text-base--line-height);
 
   direction: rtl;
   text-align: right;
@@ -49,64 +78,68 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  button {
+    font-weight: 600;
+  }
+
+  input,
+  textarea,
+  select {
+    font-weight: 400;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0;
+    font-family: inherit;
+    color: inherit;
+  }
+
+  h1 {
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  h2 {
+    font-weight: 750;
+    line-height: 1.45;
+  }
+
+  h3 {
+    font-weight: 700;
+    line-height: 1.55;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    line-height: 1.6;
+  }
 }
 
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-button {
-  font-weight: 600;
-}
-
-input,
-textarea,
-select {
-  font-weight: 400;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin-top: 0;
-  font-family: inherit;
-  color: inherit;
-}
-
-h1 {
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-h2 {
-  font-weight: 750;
-  line-height: 1.45;
-}
-
-h3 {
-  font-weight: 700;
-  line-height: 1.55;
-}
-
-h4,
-h5,
-h6 {
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-p {
-  line-height: 1.9;
+/* The few micro-labels that intentionally sit below `text-xs`. */
+.text-\[11px\] {
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 ::selection {
@@ -147,4 +180,110 @@ p {
 
 .header-mascot-float {
   animation: headerMascotFloat 3.2s ease-in-out infinite;
+}
+
+.home-hero-grid {
+  background-image:
+    linear-gradient(rgba(51, 50, 48, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 50, 48, 0.055) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 88%);
+}
+
+.home-paper-strip {
+  animation: homePaperDrift 12s ease-in-out infinite;
+}
+
+.home-fade-up {
+  animation: homeFadeUp 0.8s ease both;
+}
+
+.home-fade-delay {
+  animation-delay: 0.16s;
+}
+
+.home-float-soft {
+  animation: homeFloatSoft 6.5s ease-in-out infinite;
+}
+
+.home-float-delay {
+  animation-delay: -2s;
+}
+
+.home-float-delay-2 {
+  animation-delay: -4s;
+}
+
+.home-progress {
+  animation: homeProgress 2.6s ease-in-out infinite;
+  transform-origin: right center;
+}
+
+.home-marquee {
+  animation: homeMarquee 30s linear infinite;
+}
+
+@keyframes homeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes homeFloatSoft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes homePaperDrift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 18px -6px;
+  }
+}
+
+@keyframes homeProgress {
+  0%,
+  100% {
+    transform: scaleX(0.42);
+  }
+
+  50% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes homeMarquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-paper-strip,
+  .home-fade-up,
+  .home-float-soft,
+  .home-progress,
+  .home-marquee {
+    animation: none;
+  }
 }

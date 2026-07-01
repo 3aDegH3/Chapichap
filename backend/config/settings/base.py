@@ -50,13 +50,14 @@ INSTALLED_APPS = [
 
     # Local apps
     "apps.core",
-    "apps.accounts",
+    "apps.accounts.apps.AccountsConfig",
     "apps.products",
     "apps.orders",
     "apps.design_request",
     "apps.portfolio",
     "apps.payments",
     "apps.content",
+    "apps.admin_panel",
 ]
 
 

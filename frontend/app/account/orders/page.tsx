@@ -20,6 +20,22 @@ function formatDate(date: string) {
   }).format(new Date(date));
 }
 
+function getOrderProductTitle(order: Order) {
+  const titles = order.items
+    .map((item) => item.product_title.trim())
+    .filter(Boolean);
+
+  if (titles.length === 0) return "محصول ثبت نشده";
+  if (titles.length === 1) return titles[0];
+
+  const visibleTitles = titles.slice(0, 2).join("، ");
+  const hiddenCount = titles.length - 2;
+
+  return hiddenCount > 0
+    ? `${visibleTitles} و ${hiddenCount.toLocaleString("fa-IR")} محصول دیگر`
+    : visibleTitles;
+}
+
 export default function AccountOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,6 +110,10 @@ export default function AccountOrdersPage() {
                 {order.order_number}
               </Link>
               <p className="mt-2 text-sm font-bold text-[#77736D]">{formatDate(order.created_at)}</p>
+              <p className="mt-3 max-w-2xl text-sm font-black leading-7 text-[#333230]">
+                <span className="text-[#77736D]">محصول: </span>
+                {getOrderProductTitle(order)}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">

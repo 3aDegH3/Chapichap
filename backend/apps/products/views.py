@@ -33,6 +33,8 @@ class ProductListAPIView(ListAPIView):
     filterset_fields = {
         "category": ["exact"],
         "category__slug": ["exact"],
+        "product_type": ["exact"],
+        "gift_usage": ["exact"],
         "price": ["gte", "lte"],
     }
 
@@ -40,6 +42,8 @@ class ProductListAPIView(ListAPIView):
         "title",
         "short_description",
         "description",
+        "material",
+        "dimensions",
     ]
 
     ordering_fields = [

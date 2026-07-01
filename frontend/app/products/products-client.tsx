@@ -8,7 +8,9 @@ import Pagination from "@/components/ui/Pagination";
 import {
   getCategories,
   getProducts,
+  giftUsageOptions,
   productSortOptions,
+  productTypeOptions,
   type Category,
   type Product,
 } from "@/lib/products-api";
@@ -27,6 +29,8 @@ export default function ProductsClient() {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(Number.isFinite(initialPage) ? initialPage : 1);
   const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [productType, setProductType] = useState(searchParams.get("type") || "");
+  const [giftUsage, setGiftUsage] = useState(searchParams.get("gift") || "");
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
@@ -53,6 +57,8 @@ export default function ProductsClient() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
+    if (productType) params.set("type", productType);
+    if (giftUsage) params.set("gift", giftUsage);
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (debouncedMinPrice) params.set("min_price", debouncedMinPrice);
     if (debouncedMaxPrice) params.set("max_price", debouncedMaxPrice);
@@ -63,6 +69,8 @@ export default function ProductsClient() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [
     category,
+    productType,
+    giftUsage,
     debouncedSearch,
     debouncedMinPrice,
     debouncedMaxPrice,
@@ -102,6 +110,8 @@ export default function ProductsClient() {
         const data = await getProducts({
           page,
           category,
+          productType,
+          giftUsage,
           search: debouncedSearch,
           minPrice: debouncedMinPrice,
           maxPrice: debouncedMaxPrice,
@@ -127,14 +137,24 @@ export default function ProductsClient() {
     return () => {
       isMounted = false;
     };
-  }, [page, category, debouncedSearch, debouncedMinPrice, debouncedMaxPrice, ordering]);
+  }, [page, category, productType, giftUsage, debouncedSearch, debouncedMinPrice, debouncedMaxPrice, ordering]);
 
   const activeCategoryTitle = useMemo(() => {
     return categories.find((item) => item.slug === category)?.title;
   }, [categories, category]);
 
+  const activeProductTypeLabel = useMemo(() => {
+    return productTypeOptions.find((item) => item.value === productType)?.label;
+  }, [productType]);
+
+  const activeGiftUsageLabel = useMemo(() => {
+    return giftUsageOptions.find((item) => item.value === giftUsage)?.label;
+  }, [giftUsage]);
+
   const hasActiveFilters =
     Boolean(category) ||
+    Boolean(productType) ||
+    Boolean(giftUsage) ||
     Boolean(debouncedSearch) ||
     Boolean(debouncedMinPrice) ||
     Boolean(debouncedMaxPrice) ||
@@ -142,6 +162,16 @@ export default function ProductsClient() {
 
   function selectCategory(nextCategory: string) {
     setCategory(nextCategory);
+    setPage(1);
+  }
+
+  function selectProductType(nextType: string) {
+    setProductType(nextType);
+    setPage(1);
+  }
+
+  function selectGiftUsage(nextUsage: string) {
+    setGiftUsage(nextUsage);
     setPage(1);
   }
 
@@ -211,6 +241,52 @@ export default function ProductsClient() {
             </div>
 
             <div className="mt-6 border-t border-[#E3DED5] pt-6">
+              <p className="text-sm font-black text-[#333230]">نوع محصول</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectProductType("")}
+                  className={filterButtonClass(!productType)}
+                >
+                  همه
+                </button>
+                {productTypeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectProductType(option.value)}
+                    className={filterButtonClass(productType === option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
+              <p className="text-sm font-black text-[#333230]">کاربرد هدیه</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectGiftUsage("")}
+                  className={filterButtonClass(!giftUsage)}
+                >
+                  همه
+                </button>
+                {giftUsageOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectGiftUsage(option.value)}
+                    className={filterButtonClass(giftUsage === option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
               <p className="text-sm font-black text-[#333230]">بازه قیمت</p>
               <div className="mt-3 grid gap-3">
                 <label className="block">
@@ -271,6 +347,8 @@ export default function ProductsClient() {
                 <p className="mt-1 text-sm text-[#77736D]">
                   {getFilterSummary({
                     categoryTitle: activeCategoryTitle,
+                    productTypeLabel: activeProductTypeLabel,
+                    giftUsageLabel: activeGiftUsageLabel,
                     search: debouncedSearch,
                     minPrice: debouncedMinPrice,
                     maxPrice: debouncedMaxPrice,
@@ -283,6 +361,8 @@ export default function ProductsClient() {
                   type="button"
                   onClick={() => {
                     setCategory("");
+                    setProductType("");
+                    setGiftUsage("");
                     setSearch("");
                     setDebouncedSearch("");
                     setMinPrice("");
@@ -334,7 +414,7 @@ export default function ProductsClient() {
 
 function filterButtonClass(isActive: boolean) {
   return [
-    "h-11 rounded-xl px-4 text-right text-sm font-black transition",
+    "flex h-11 items-center justify-center rounded-xl px-3 text-center text-sm font-black transition",
     isActive
       ? "border border-[#D2AD70]/55 bg-[#F6F1E8] text-[#B2894C]"
       : "border border-transparent bg-[#FAFAF8] text-[#77736D] hover:border-[#D2AD70]/35 hover:bg-[#F6F1E8] hover:text-[#333230]",
@@ -347,17 +427,23 @@ function normalizePrice(value: string) {
 
 function getFilterSummary({
   categoryTitle,
+  productTypeLabel,
+  giftUsageLabel,
   search,
   minPrice,
   maxPrice,
 }: {
   categoryTitle?: string;
+  productTypeLabel?: string;
+  giftUsageLabel?: string;
   search: string;
   minPrice: string;
   maxPrice: string;
 }) {
   const filters = [
     categoryTitle ? `دسته: ${categoryTitle}` : "",
+    productTypeLabel ? `نوع: ${productTypeLabel}` : "",
+    giftUsageLabel ? `کاربرد: ${giftUsageLabel}` : "",
     search ? `جستجو: ${search}` : "",
     minPrice ? `از ${Number(minPrice).toLocaleString("fa-IR")} تومان` : "",
     maxPrice ? `تا ${Number(maxPrice).toLocaleString("fa-IR")} تومان` : "",

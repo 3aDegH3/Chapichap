@@ -7,7 +7,12 @@ import { useEffect, useState } from "react";
 import ProductCard from "@/components/products/ProductCard";
 import ProductGallery from "@/components/products/ProductGallery";
 import { useCart } from "@/contexts/CartContext";
-import { getProduct, type ProductDetail } from "@/lib/products-api";
+import {
+  getProduct,
+  getProductStockLimit,
+  isProductAvailable,
+  type ProductDetail,
+} from "@/lib/products-api";
 
 function formatPrice(price: string) {
   return new Intl.NumberFormat("fa-IR").format(Number(price));
@@ -65,6 +70,16 @@ export default function ProductDetailClient() {
     );
   }
 
+  const stockLimit = getProductStockLimit(product);
+  const isAvailable = isProductAvailable(product);
+  const specs = [
+    product.material ? { label: "جنس", value: product.material } : null,
+    product.dimensions ? { label: "ابعاد", value: product.dimensions } : null,
+    product.preparation_time ? { label: "آماده‌سازی", value: product.preparation_time } : null,
+    product.product_type_label ? { label: "نوع محصول", value: product.product_type_label } : null,
+    product.gift_usage_label ? { label: "کاربرد هدیه", value: product.gift_usage_label } : null,
+  ].filter((item): item is { label: string; value: string } => Boolean(item));
+
   return (
     <main className="bg-[#FAFAF8] pb-24 md:pb-0">
       <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
@@ -94,11 +109,27 @@ export default function ProductDetailClient() {
         <ProductGallery product={product} />
 
         <div className="lg:sticky lg:top-28 lg:h-fit">
-          {product.category && (
-            <span className="inline-flex rounded-full border border-[#D2AD70]/35 bg-[#F6F1E8] px-4 py-2 text-sm font-black text-[#B2894C]">
-              {product.category.title}
+          <div className="flex flex-wrap gap-2">
+            {product.category && (
+              <span className="inline-flex rounded-full border border-[#D2AD70]/35 bg-[#F6F1E8] px-4 py-2 text-sm font-black text-[#B2894C]">
+                {product.category.title}
+              </span>
+            )}
+            <span
+              className={[
+                "inline-flex rounded-full border px-4 py-2 text-sm font-black",
+                isAvailable
+                  ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                  : "border-red-100 bg-red-50 text-red-600",
+              ].join(" ")}
+            >
+              {isAvailable
+                ? stockLimit === null
+                  ? "موجود"
+                  : `موجودی ${stockLimit.toLocaleString("fa-IR")}`
+                : "ناموجود"}
             </span>
-          )}
+          </div>
 
           <h1 className="mt-5 text-3xl font-black leading-tight text-[#333230] sm:text-4xl">
             {product.title}
@@ -114,23 +145,34 @@ export default function ProductDetailClient() {
               <div>
                 <p className="text-sm font-bold text-[#77736D]">شروع قیمت</p>
                 <p className="mt-1 text-3xl font-black text-[#333230]">
-                  {formatPrice(product.price)} تومان
+                  {formatPrice(product.effective_price || product.price)} تومان
                 </p>
+                {product.has_active_discount && (
+                  <p className="mt-2 text-sm font-bold text-[#9A948C] line-through">
+                    {formatPrice(product.price)} تومان
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2 sm:min-w-48">
                 <button
                   type="button"
                   onClick={() => addItem(product)}
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-7 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(178,137,76,0.9)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
+                  disabled={!isAvailable}
+                  className={[
+                    "inline-flex h-12 items-center justify-center rounded-xl px-7 text-sm font-black shadow-[0_16px_30px_-22px_rgba(178,137,76,0.9)] transition",
+                    isAvailable
+                      ? "bg-[#D2AD70] text-[#333230] hover:-translate-y-0.5 hover:bg-[#B2894C]"
+                      : "cursor-not-allowed bg-[#E3DED5] text-[#9A948C] shadow-none",
+                  ].join(" ")}
                 >
-                  افزودن به سبد
+                  {isAvailable ? "افزودن به سبد" : "ناموجود"}
                 </button>
                 <Link
                   href={`/design-request?product=${product.slug}`}
                   className="inline-flex h-12 items-center justify-center rounded-xl border border-[#D2AD70]/45 bg-[#F6F1E8] px-7 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F2EEE6]"
                 >
-                  شروع سفارش
+                  درخواست طراحی اختصاصی
                 </Link>
               </div>
             </div>
@@ -144,6 +186,19 @@ export default function ProductDetailClient() {
             </div>
           </div>
 
+          {specs.length > 0 && (
+            <div className="mt-6 grid gap-3 rounded-2xl border border-[#E3DED5] bg-white p-4 sm:grid-cols-2">
+              {specs.map((spec) => (
+                <div key={spec.label} className="rounded-xl bg-[#FAFAF8] px-4 py-3">
+                  <p className="text-xs font-black text-[#B2894C]">{spec.label}</p>
+                  <p className="mt-1 text-sm font-black leading-6 text-[#333230]">
+                    {spec.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="mt-8">
             <h2 className="text-xl font-black text-[#333230]">توضیحات محصول</h2>
             <p className="mt-4 whitespace-pre-line leading-8 text-[#77736D]">
@@ -152,6 +207,24 @@ export default function ProductDetailClient() {
                 "جزئیات این محصول به‌زودی کامل‌تر می‌شود. برای سفارش می‌توانی طرح، متن یا ایده مورد نظرت را ارسال کنی."}
             </p>
           </div>
+
+          {(product.print_file_guide || product.size_guide) && (
+            <div className="mt-8 grid gap-4">
+              {product.print_file_guide && (
+                <section className="rounded-2xl border border-[#E3DED5] bg-white p-5">
+                  <h2 className="text-lg font-black text-[#333230]">راهنمای فایل چاپ</h2>
+                  <p className="mt-3 leading-8 text-[#77736D]">{product.print_file_guide}</p>
+                </section>
+              )}
+
+              {product.size_guide && (
+                <section className="rounded-2xl border border-[#E3DED5] bg-white p-5">
+                  <h2 className="text-lg font-black text-[#333230]">راهنمای سایز</h2>
+                  <p className="mt-3 leading-8 text-[#77736D]">{product.size_guide}</p>
+                </section>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -190,16 +263,22 @@ export default function ProductDetailClient() {
           <div>
             <p className="text-xs font-bold text-[#77736D]">شروع قیمت</p>
             <p className="text-base font-black text-[#333230]">
-              {formatPrice(product.price)} تومان
+              {formatPrice(product.effective_price || product.price)} تومان
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => addItem(product)}
-              className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#D2AD70] px-4 text-sm font-black text-[#333230]"
+              disabled={!isAvailable}
+              className={[
+                "inline-flex h-12 shrink-0 items-center justify-center rounded-xl px-4 text-sm font-black",
+                isAvailable
+                  ? "bg-[#D2AD70] text-[#333230]"
+                  : "cursor-not-allowed bg-[#E3DED5] text-[#9A948C]",
+              ].join(" ")}
             >
-              سبد
+              {isAvailable ? "سبد" : "ناموجود"}
             </button>
             <Link
               href={`/design-request?product=${product.slug}`}

@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/v1/", include("apps.payments.urls")),
     path("api/v1/", include("apps.design_request.urls")),
     path("api/v1/", include("apps.content.urls")),
+    path("api/v1/admin/", include("apps.admin_panel.urls")),
     path("api/v1/categories/", CategoryListAPIView.as_view(), name="category-list"),
     path("api/v1/search/", ProductSearchAPIView.as_view(), name="product-search"),
     path("api/v1/portfolio/", include("apps.portfolio.urls")),

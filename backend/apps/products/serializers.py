@@ -44,6 +44,12 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     image_url = serializers.SerializerMethodField()
+    product_type_label = serializers.CharField(source="get_product_type_display", read_only=True)
+    gift_usage_label = serializers.CharField(source="get_gift_usage_display", read_only=True)
+    is_available = serializers.BooleanField(read_only=True)
+    effective_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    has_active_discount = serializers.BooleanField(read_only=True)
+    is_low_stock = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Product
@@ -55,6 +61,25 @@ class ProductSerializer(serializers.ModelSerializer):
             "short_description",
             "description",
             "price",
+            "discount_price",
+            "discount_starts_at",
+            "discount_ends_at",
+            "effective_price",
+            "has_active_discount",
+            "product_type",
+            "product_type_label",
+            "gift_usage",
+            "gift_usage_label",
+            "material",
+            "dimensions",
+            "size_guide",
+            "preparation_time",
+            "print_file_guide",
+            "stock_quantity",
+            "unlimited_stock",
+            "low_stock_threshold",
+            "is_available",
+            "is_low_stock",
             "image",
             "image_url",
             "is_active",

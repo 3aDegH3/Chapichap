@@ -4,6 +4,7 @@
 
   import { useAuth } from "@/contexts/AuthContext";
   import { useCart } from "@/contexts/CartContext";
+  import { getProductStockLimit, isProductAvailable } from "@/lib/products-api";
 
   function formatPrice(price: number | string) {
     return new Intl.NumberFormat("fa-IR").format(Number(price) || 0);
@@ -13,6 +14,11 @@
     const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
     const { isAuthenticated } = useAuth();
     const checkoutHref = isAuthenticated ? "/checkout" : "/login?next=/checkout";
+    const itemsWithIssues = items.filter((item) => {
+      const stockLimit = getProductStockLimit(item.product);
+      return !isProductAvailable(item.product) || (stockLimit !== null && item.quantity > stockLimit);
+    });
+    const canCheckout = items.length > 0 && itemsWithIssues.length === 0;
 
     return (
       <main className="bg-[#FAFAF8]">
@@ -65,7 +71,13 @@
                 </div>
 
                 {items.map((item) => {
-                  const lineTotal = Number(item.product.price) * item.quantity;
+                  const unitPrice = item.product.effective_price || item.product.price;
+                  const lineTotal = Number(unitPrice) * item.quantity;
+                  const stockLimit = getProductStockLimit(item.product);
+                  const isAvailable = isProductAvailable(item.product);
+                  const hasQuantityIssue = stockLimit !== null && item.quantity > stockLimit;
+                  const isIncreaseDisabled =
+                    !isAvailable || (stockLimit !== null && item.quantity >= stockLimit);
 
                   return (
                     <article
@@ -100,8 +112,34 @@
                               {item.product.title}
                             </Link>
                             <p className="mt-1 text-sm font-bold text-[#77736D]">
-                              قیمت واحد: {formatPrice(item.product.price)} تومان
+                              قیمت واحد: {formatPrice(unitPrice)} تومان
                             </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {item.product.product_type_label && (
+                                <span className="rounded-lg bg-[#F6F1E8] px-2.5 py-1 text-xs font-black text-[#B2894C]">
+                                  {item.product.product_type_label}
+                                </span>
+                              )}
+                              <span
+                                className={[
+                                  "rounded-lg px-2.5 py-1 text-xs font-black",
+                                  isAvailable && !hasQuantityIssue
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-red-50 text-red-600",
+                                ].join(" ")}
+                              >
+                                {isAvailable
+                                  ? stockLimit === null
+                                    ? "موجود"
+                                    : `موجودی ${stockLimit.toLocaleString("fa-IR")}`
+                                  : "ناموجود"}
+                              </span>
+                            </div>
+                            {hasQuantityIssue && (
+                              <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold leading-6 text-red-600">
+                                تعداد انتخاب‌شده بیشتر از موجودی فعلی است.
+                              </p>
+                            )}
                           </div>
 
                           <button
@@ -118,7 +156,8 @@
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="text-lg font-black text-[#B2894C] transition hover:bg-[#F6F1E8]"
+                              disabled={isIncreaseDisabled}
+                              className="text-lg font-black text-[#B2894C] transition hover:bg-[#F6F1E8] disabled:cursor-not-allowed disabled:text-[#C9C0B2] disabled:hover:bg-transparent"
                               aria-label="افزایش تعداد"
                             >
                               +
@@ -127,8 +166,9 @@
                               value={item.quantity}
                               inputMode="numeric"
                               onChange={(event) =>
-                                updateQuantity(item.product.id, Number(event.target.value) || 1)
+                                updateQuantity(item.product.id, Number(event.target.value))
                               }
+                              disabled={!isAvailable}
                               className="min-w-0 border-x border-[#E3DED5] bg-white text-center text-sm font-black text-[#333230] outline-none"
                               aria-label="تعداد"
                             />
@@ -175,13 +215,29 @@
               </span>
             </div>
 
+            {itemsWithIssues.length > 0 && (
+              <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-bold leading-6 text-red-600">
+                قبل از تسویه، تعداد یا موجودی {itemsWithIssues.length.toLocaleString("fa-IR")} محصول را اصلاح کن.
+              </p>
+            )}
+
             <div className="mt-6 grid gap-3">
-              <Link
-                href={checkoutHref}
-                className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
-              >
-                تسویه حساب
-              </Link>
+              {canCheckout ? (
+                <Link
+                  href={checkoutHref}
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
+                >
+                  تسویه حساب
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex h-12 cursor-not-allowed items-center justify-center rounded-xl bg-[#E3DED5] px-6 text-sm font-black text-[#9A948C]"
+                >
+                  تسویه حساب
+                </button>
+              )}
               <Link
                 href="/products"
                 className="inline-flex h-12 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"

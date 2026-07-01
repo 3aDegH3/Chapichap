@@ -25,6 +25,15 @@ def parse_positive_int(value, default=1):
         return default
 
 
+def validate_cart_quantity(product, quantity):
+    if not product.is_available:
+        raise ValidationError(f"محصول «{product.title}» در حال حاضر موجود نیست.")
+    if product.unlimited_stock:
+        return
+    if quantity > product.stock_quantity:
+        raise ValidationError(f"موجودی محصول «{product.title}» فقط {product.stock_quantity} عدد است.")
+
+
 def get_or_create_cart(request):
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -68,6 +77,7 @@ def sync_cart_from_payload(cart, raw_items):
         product = products.get(product_id)
         if not product:
             continue
+        validate_cart_quantity(product, quantity)
 
         CartItem.objects.update_or_create(
             cart=cart,
@@ -93,6 +103,10 @@ class CartAddAPIView(APIView):
         product_id = request.data.get("product_id")
         quantity = parse_positive_int(request.data.get("quantity", 1))
         product = get_object_or_404(Product, id=product_id, is_active=True)
+        try:
+            validate_cart_quantity(product, quantity)
+        except ValidationError as error:
+            return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
         cart = get_or_create_cart(request)
 
         item, created = CartItem.objects.get_or_create(
@@ -102,6 +116,10 @@ class CartAddAPIView(APIView):
         )
 
         if not created:
+            try:
+                validate_cart_quantity(product, item.quantity + quantity)
+            except ValidationError as error:
+                return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
             item.quantity += quantity
             item.save(update_fields=["quantity", "updated_at"])
 
@@ -118,11 +136,15 @@ class CartUpdateAPIView(APIView):
         except (TypeError, ValueError):
             quantity = 1
         cart = get_or_create_cart(request)
-        item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        item = get_object_or_404(CartItem.objects.select_related("product"), cart=cart, product_id=product_id)
 
         if quantity <= 0:
             item.delete()
         else:
+            try:
+                validate_cart_quantity(item.product, quantity)
+            except ValidationError as error:
+                return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
             item.quantity = quantity
             item.save(update_fields=["quantity", "updated_at"])
 
@@ -146,9 +168,9 @@ class CheckoutPreviewAPIView(APIView):
         serializer = CheckoutPreviewRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         cart = get_or_create_cart(request)
-        sync_cart_from_payload(cart, serializer.validated_data.get("items"))
 
         try:
+            sync_cart_from_payload(cart, serializer.validated_data.get("items"))
             preview = calculate_checkout_preview(
                 cart,
                 delivery_method=serializer.validated_data["delivery_method"],
@@ -204,9 +226,9 @@ class OrderListCreateAPIView(APIView):
                 )
 
         cart = get_or_create_cart(request)
-        sync_cart_from_payload(cart, serializer.validated_data.get("items"))
 
         try:
+            sync_cart_from_payload(cart, serializer.validated_data.get("items"))
             order = create_order_from_cart(
                 cart,
                 serializer.validated_data,

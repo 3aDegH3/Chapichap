@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { getNotificationSummary } from "@/lib/account-api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -23,12 +24,34 @@ export default function AccountShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
   }, [isAuthenticated, isLoading, pathname, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let mounted = true;
+
+    async function loadNotificationSummary() {
+      try {
+        const data = await getNotificationSummary();
+        if (mounted) setUnreadNotificationsCount(data.unread_count);
+      } catch {
+        if (mounted) setUnreadNotificationsCount(0);
+      }
+    }
+
+    void loadNotificationSummary();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, pathname]);
 
   if (isLoading || !user) {
     return (
@@ -71,11 +94,16 @@ export default function AccountShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-xl px-4 py-3 text-sm font-black text-[#77736D] transition hover:bg-[#F6F1E8] hover:text-[#333230]",
+                    "flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-black text-[#77736D] transition hover:bg-[#F6F1E8] hover:text-[#333230]",
                     isActive && "border border-[#D2AD70]/55 bg-[#F6F1E8] text-[#333230]"
                   )}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.href === "/account/notifications" && unreadNotificationsCount > 0 && (
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#D2AD70] px-2 text-xs font-black text-[#333230]">
+                      {unreadNotificationsCount.toLocaleString("fa-IR")}
+                    </span>
+                  )}
                 </Link>
               );
             })}

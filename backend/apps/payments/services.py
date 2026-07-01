@@ -6,6 +6,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.accounts.services import (
+    notify_order_status_changed,
+    notify_payment_failed,
+    notify_payment_successful,
+)
 from apps.orders.models import Order, OrderStatusHistory
 
 from .models import Payment, PaymentStatusLog, Transaction
@@ -226,6 +231,12 @@ def mark_order_as_paid(order, user=None):
             visible_to_customer=True,
             created_by=user if user and user.is_authenticated else None,
         )
+        notify_order_status_changed(
+            order,
+            previous_status=previous_order_status,
+            new_status=order.status,
+            actor=user,
+        )
 
 
 def start_gateway_transaction(payment, idempotency_key=""):
@@ -359,6 +370,9 @@ def handle_mock_callback(transaction_id, status, user=None):
 
     if payment.status == Payment.Status.SUCCESSFUL:
         mark_order_as_paid(payment.order, user=user)
+        notify_payment_successful(payment)
+    elif payment.status in {Payment.Status.FAILED, Payment.Status.CANCELED, Payment.Status.EXPIRED}:
+        notify_payment_failed(payment)
 
     return payment, transaction_obj
 
@@ -390,5 +404,6 @@ def mark_payment_as_paid(payment_id, actor=None):
         actor=actor,
     )
     mark_order_as_paid(payment.order, user=actor)
+    notify_payment_successful(payment)
 
     return payment

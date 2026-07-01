@@ -105,6 +105,22 @@ export default function AccountDesignRequestsPage() {
             <InfoPill label="شماره تماس" value={request.contact_phone} />
             <InfoPill label="محصول" value={request.product?.title || "بدون محصول"} />
           </div>
+
+          {request.admin_response && (
+            <div className="mt-5 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-black text-[#B2894C]">پاسخ تیم طراحی</p>
+                {request.admin_response_at && (
+                  <p className="text-xs font-bold text-[#77736D]">
+                    {formatDate(request.admin_response_at)}
+                  </p>
+                )}
+              </div>
+              <p className="mt-3 whitespace-pre-line text-sm font-bold leading-8 text-[#333230]">
+                {request.admin_response}
+              </p>
+            </div>
+          )}
         </article>
       ))}
     </section>

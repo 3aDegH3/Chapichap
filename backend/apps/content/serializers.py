@@ -2,6 +2,8 @@ import re
 
 from rest_framework import serializers
 
+from apps.accounts.services import notify_contact_message_created
+
 from .models import ContactMessage
 
 
@@ -61,4 +63,6 @@ class ContactMessageSerializer(serializers.ModelSerializer):
             validated_data["ip_address"] = ip_address or None
             validated_data["user_agent"] = request.META.get("HTTP_USER_AGENT", "")[:255]
 
-        return super().create(validated_data)
+        contact_message = super().create(validated_data)
+        notify_contact_message_created(contact_message)
+        return contact_message

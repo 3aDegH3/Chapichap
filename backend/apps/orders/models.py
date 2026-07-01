@@ -47,7 +47,7 @@ class CartItem(models.Model):
 
     @property
     def line_total(self):
-        return self.product.price * self.quantity
+        return self.product.effective_price * self.quantity
 
 
 class Order(models.Model):
@@ -87,6 +87,8 @@ class Order(models.Model):
         choices=DeliveryMethod.choices,
         default=DeliveryMethod.SHIPPING,
     )
+    shipping_provider = models.CharField(max_length=120, blank=True)
+    shipping_tracking_code = models.CharField(max_length=120, blank=True)
     shipping_cost = models.DecimalField(max_digits=12, decimal_places=2)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -153,3 +155,23 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order.order_number}: {self.new_status}"
+
+
+class OrderInternalNote(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="internal_notes")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="order_internal_notes",
+        blank=True,
+        null=True,
+    )
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.author_id}"
