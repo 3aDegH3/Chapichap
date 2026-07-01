@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
+from apps.core.file_security import make_secure_customer_filename, normalize_customer_content_type, validate_customer_upload_file
 from apps.design_request.models import DesignRequest
 from apps.orders.models import Order
 from apps.orders.serializers import OrderSerializer
@@ -43,6 +44,7 @@ from .serializers import (
     SupportTicketSerializer,
     UserSerializer,
 )
+from .services import notify_ticket_closed, notify_ticket_created
 
 
 class EmailDeliveryError(Exception):
@@ -241,7 +243,7 @@ class AccountDashboardAPIView(APIView):
     def get(self, request):
         user = request.user
         profile_fields = [user.first_name, user.last_name, user.email, user.phone_number]
-        active_orders = Order.objects.filter(user=user).exclude(status__in=[Order.Status.COMPLETED, Order.Status.CANCELLED])
+        active_orders = Order.objects.filter(user=user).exclude(status__in=[Order.Status.DELIVERED, Order.Status.CANCELLED])
         latest_order = Order.objects.filter(user=user).prefetch_related("items", "payments", "status_history").first()
         latest_design = DesignRequest.objects.filter(user=user).order_by("-created_at").first()
         active_offer = CustomerOffer.objects.filter(user=user, is_active=True).order_by("-created_at").first()
@@ -406,14 +408,15 @@ class ValidateOfferAPIView(APIView):
 
 
 def create_support_attachments(request, message):
-    allowed_types = {"image/jpeg", "image/png", "image/webp", "application/pdf", "application/zip"}
     for file in request.FILES.getlist("files"):
-        mime_type = getattr(file, "content_type", "")
-        if mime_type and mime_type not in allowed_types:
+        try:
+            validate_customer_upload_file(file)
+        except Exception:
             continue
-        if file.size > 10 * 1024 * 1024:
-            continue
-        SupportAttachment.objects.create(message=message, file=file, filename=file.name, file_size=file.size, mime_type=mime_type)
+        original_name = file.name
+        file.name = make_secure_customer_filename(original_name)
+        mime_type = normalize_customer_content_type(getattr(file, "content_type", ""), original_name)
+        SupportAttachment.objects.create(message=message, file=file, filename=original_name, file_size=file.size, mime_type=mime_type)
 
 
 class TicketListCreateAPIView(APIView):
@@ -440,6 +443,7 @@ class TicketListCreateAPIView(APIView):
         )
         message = SupportMessage.objects.create(ticket=ticket, sender=request.user, message=serializer.validated_data["message"])
         create_support_attachments(request, message)
+        notify_ticket_created(ticket)
         return api_response(message="تیکت ثبت شد.", data={"ticket": SupportTicketSerializer(ticket, context={"request": request}).data}, http_status=status.HTTP_201_CREATED)
 
 
@@ -481,6 +485,7 @@ class TicketCloseAPIView(APIView):
         ticket.status = SupportTicket.Status.CLOSED
         ticket.closed_at = timezone.now()
         ticket.save(update_fields=["status", "closed_at", "updated_at"])
+        notify_ticket_closed(ticket)
         return api_response(message="تیکت بسته شد.")
 
 
@@ -488,7 +493,24 @@ class NotificationsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return api_response(data={"notifications": NotificationSerializer(Notification.objects.filter(user=request.user), many=True).data})
+        queryset = Notification.objects.filter(user=request.user)
+        return api_response(
+            data={
+                "notifications": NotificationSerializer(queryset, many=True).data,
+                "unread_count": queryset.filter(is_read=False).count(),
+            }
+        )
+
+
+class NotificationSummaryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return api_response(
+            data={
+                "unread_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+            }
+        )
 
 
 class NotificationReadAPIView(APIView):

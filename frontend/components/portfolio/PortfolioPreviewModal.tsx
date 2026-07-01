@@ -84,13 +84,13 @@ export default function PortfolioPreviewModal({
         aria-label="بستن پیش‌نمایش"
       />
 
-      <div className="relative mx-auto max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
+      <div className="relative mx-auto max-w-5xl overflow-hidden rounded-2xl border border-[#E3DED5] bg-white shadow-2xl">
+        <div className="flex items-center justify-between gap-4 border-b border-[#E3DED5] px-5 py-4">
           <div>
-            <p className="text-xs font-black text-[var(--secondary)]">
+            <p className="text-xs font-black text-[#B2894C]">
               {current.work_type_label}
             </p>
-            <h2 className="mt-1 text-xl font-black text-[var(--dark)]">
+            <h2 className="mt-1 text-xl font-black text-[#333230]">
               {current.title}
             </h2>
           </div>
@@ -98,7 +98,7 @@ export default function PortfolioPreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-xl font-black text-gray-600 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E3DED5] text-xl font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] hover:text-[#333230]"
             aria-label="بستن"
           >
             ×
@@ -106,8 +106,8 @@ export default function PortfolioPreviewModal({
         </div>
 
         <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="bg-gradient-to-br from-sky-50 via-white to-pink-50 p-4">
-            <div className="aspect-square overflow-hidden rounded-lg border border-white bg-white shadow-sm">
+          <div className="bg-[#F6F1E8] p-4">
+            <div className="aspect-square overflow-hidden rounded-2xl border border-white bg-white shadow-sm">
               {activeImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -117,7 +117,7 @@ export default function PortfolioPreviewModal({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center p-8">
-                  <div className="grid h-40 w-40 place-items-center rounded-full border border-sky-100 bg-white text-center text-2xl font-black text-[var(--secondary)] shadow-sm">
+                  <div className="grid h-40 w-40 place-items-center rounded-full border border-[#D2AD70]/35 bg-white text-center text-2xl font-black text-[#B2894C] shadow-sm">
                     نمونه‌کار
                   </div>
                 </div>
@@ -132,10 +132,10 @@ export default function PortfolioPreviewModal({
                     type="button"
                     onClick={() => setActiveImageUrl(image.image_url)}
                     className={[
-                      "aspect-square overflow-hidden rounded-lg border bg-white transition",
+                      "aspect-square overflow-hidden rounded-xl border bg-white transition",
                       activeImageUrl === image.image_url
-                        ? "border-[var(--secondary)] ring-4 ring-sky-100"
-                        : "border-gray-200 hover:border-[var(--secondary)]",
+                        ? "border-[#D2AD70] ring-4 ring-[#D2AD70]/20"
+                        : "border-[#E3DED5] hover:border-[#D2AD70]",
                     ].join(" ")}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -153,41 +153,41 @@ export default function PortfolioPreviewModal({
           <div className="p-6">
             {isLoading ? (
               <div className="space-y-4">
-                <div className="h-5 w-32 animate-pulse rounded bg-gray-100" />
-                <div className="h-24 animate-pulse rounded bg-gray-100" />
-                <div className="h-12 animate-pulse rounded bg-gray-100" />
+                <div className="h-5 w-32 animate-pulse rounded bg-[#E3DED5]" />
+                <div className="h-24 animate-pulse rounded bg-[#E3DED5]" />
+                <div className="h-12 animate-pulse rounded bg-[#E3DED5]" />
               </div>
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-bold text-gray-500">نوع کار</p>
-                    <p className="mt-1 font-black text-[var(--dark)]">
+                  <div className="rounded-xl bg-[#FAFAF8] p-4">
+                    <p className="text-xs font-bold text-[#77736D]">نوع کار</p>
+                    <p className="mt-1 font-black text-[#333230]">
                       {current.work_type_label}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-bold text-gray-500">نوع سفارش</p>
-                    <p className="mt-1 font-black text-[var(--dark)]">
+                  <div className="rounded-xl bg-[#FAFAF8] p-4">
+                    <p className="text-xs font-bold text-[#77736D]">نوع سفارش</p>
+                    <p className="mt-1 font-black text-[#333230]">
                       {current.client_name || "سفارش اختصاصی"}
                     </p>
                   </div>
                 </div>
 
-                <p className="mt-6 whitespace-pre-line leading-8 text-gray-600">
+                <p className="mt-6 whitespace-pre-line leading-8 text-[#77736D]">
                   {current.description ||
                     current.short_description ||
                     "جزئیات این نمونه‌کار به‌زودی کامل‌تر می‌شود."}
                 </p>
 
                 {detail && detail.related_items.length > 0 && (
-                  <div className="mt-7 border-t border-gray-100 pt-5">
-                    <h3 className="font-black text-[var(--dark)]">نمونه‌کارهای مشابه</h3>
+                  <div className="mt-7 border-t border-[#E3DED5] pt-5">
+                    <h3 className="font-black text-[#333230]">نمونه‌کارهای مشابه</h3>
                     <div className="mt-3 grid gap-2">
                       {detail.related_items.map((related) => (
                         <div
                           key={related.id}
-                          className="rounded-lg bg-gray-50 px-4 py-3 text-right text-sm font-black text-gray-700"
+                          className="rounded-xl bg-[#FAFAF8] px-4 py-3 text-right text-sm font-black text-[#77736D]"
                         >
                           {related.title}
                         </div>

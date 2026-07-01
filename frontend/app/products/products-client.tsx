@@ -8,7 +8,9 @@ import Pagination from "@/components/ui/Pagination";
 import {
   getCategories,
   getProducts,
+  giftUsageOptions,
   productSortOptions,
+  productTypeOptions,
   type Category,
   type Product,
 } from "@/lib/products-api";
@@ -27,6 +29,8 @@ export default function ProductsClient() {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(Number.isFinite(initialPage) ? initialPage : 1);
   const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [productType, setProductType] = useState(searchParams.get("type") || "");
+  const [giftUsage, setGiftUsage] = useState(searchParams.get("gift") || "");
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
@@ -53,6 +57,8 @@ export default function ProductsClient() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
+    if (productType) params.set("type", productType);
+    if (giftUsage) params.set("gift", giftUsage);
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (debouncedMinPrice) params.set("min_price", debouncedMinPrice);
     if (debouncedMaxPrice) params.set("max_price", debouncedMaxPrice);
@@ -63,6 +69,8 @@ export default function ProductsClient() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [
     category,
+    productType,
+    giftUsage,
     debouncedSearch,
     debouncedMinPrice,
     debouncedMaxPrice,
@@ -102,6 +110,8 @@ export default function ProductsClient() {
         const data = await getProducts({
           page,
           category,
+          productType,
+          giftUsage,
           search: debouncedSearch,
           minPrice: debouncedMinPrice,
           maxPrice: debouncedMaxPrice,
@@ -127,14 +137,24 @@ export default function ProductsClient() {
     return () => {
       isMounted = false;
     };
-  }, [page, category, debouncedSearch, debouncedMinPrice, debouncedMaxPrice, ordering]);
+  }, [page, category, productType, giftUsage, debouncedSearch, debouncedMinPrice, debouncedMaxPrice, ordering]);
 
   const activeCategoryTitle = useMemo(() => {
     return categories.find((item) => item.slug === category)?.title;
   }, [categories, category]);
 
+  const activeProductTypeLabel = useMemo(() => {
+    return productTypeOptions.find((item) => item.value === productType)?.label;
+  }, [productType]);
+
+  const activeGiftUsageLabel = useMemo(() => {
+    return giftUsageOptions.find((item) => item.value === giftUsage)?.label;
+  }, [giftUsage]);
+
   const hasActiveFilters =
     Boolean(category) ||
+    Boolean(productType) ||
+    Boolean(giftUsage) ||
     Boolean(debouncedSearch) ||
     Boolean(debouncedMinPrice) ||
     Boolean(debouncedMaxPrice) ||
@@ -145,23 +165,33 @@ export default function ProductsClient() {
     setPage(1);
   }
 
+  function selectProductType(nextType: string) {
+    setProductType(nextType);
+    setPage(1);
+  }
+
+  function selectGiftUsage(nextUsage: string) {
+    setGiftUsage(nextUsage);
+    setPage(1);
+  }
+
   function handlePageChange(nextPage: number) {
     setPage(nextPage);
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
-    <main className="bg-white">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-sky-50/80 to-white">
+    <main className="bg-[#FAFAF8]">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-black text-[var(--secondary)]">
+            <p className="text-sm font-black text-[#B2894C]">
               محصولات چاپ و هدیه اختصاصی
             </p>
-            <h1 className="mt-4 text-3xl font-black leading-tight text-[var(--dark)] sm:text-5xl">
+            <h1 className="mt-4 text-3xl font-black leading-tight text-[#333230] sm:text-5xl">
               محصول مناسب سفارش خودت را سریع پیدا کن
             </h1>
-            <p className="mt-5 leading-8 text-gray-600">
+            <p className="mt-5 leading-8 text-[#77736D]">
               دسته‌بندی، جستجو و صفحه‌بندی کمک می‌کند بدون شلوغی بین محصولات
               چاپی انتخاب کنی و وارد جزئیات شوی.
             </p>
@@ -171,10 +201,10 @@ export default function ProductsClient() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <aside className="h-fit rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <aside className="h-fit rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
             <label
               htmlFor="product-search"
-              className="text-sm font-black text-[var(--dark)]"
+              className="text-sm font-black text-[#333230]"
             >
               جستجوی محصول
             </label>
@@ -183,11 +213,11 @@ export default function ProductsClient() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="مثلا ماگ، تیشرت، هدیه تبلیغاتی"
-              className="mt-3 h-12 w-full rounded-lg border border-gray-200 px-4 text-sm outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+              className="mt-3 h-12 w-full rounded-xl border border-[#E3DED5] px-4 text-sm outline-none transition placeholder:text-[#A8A29A] focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
             />
 
             <div className="mt-6">
-              <p className="text-sm font-black text-[var(--dark)]">دسته‌بندی</p>
+              <p className="text-sm font-black text-[#333230]">دسته‌بندی</p>
               <div className="mt-3 grid gap-2">
                 <button
                   type="button"
@@ -210,37 +240,83 @@ export default function ProductsClient() {
               </div>
             </div>
 
-            <div className="mt-6 border-t border-gray-100 pt-6">
-              <p className="text-sm font-black text-[var(--dark)]">بازه قیمت</p>
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
+              <p className="text-sm font-black text-[#333230]">نوع محصول</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectProductType("")}
+                  className={filterButtonClass(!productType)}
+                >
+                  همه
+                </button>
+                {productTypeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectProductType(option.value)}
+                    className={filterButtonClass(productType === option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
+              <p className="text-sm font-black text-[#333230]">کاربرد هدیه</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectGiftUsage("")}
+                  className={filterButtonClass(!giftUsage)}
+                >
+                  همه
+                </button>
+                {giftUsageOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectGiftUsage(option.value)}
+                    className={filterButtonClass(giftUsage === option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
+              <p className="text-sm font-black text-[#333230]">بازه قیمت</p>
               <div className="mt-3 grid gap-3">
                 <label className="block">
-                  <span className="text-xs font-bold text-gray-500">از قیمت</span>
+                  <span className="text-xs font-bold text-[#77736D]">از قیمت</span>
                   <input
                     inputMode="numeric"
                     value={minPrice}
                     onChange={(event) => setMinPrice(event.target.value)}
                     placeholder="مثلا 200000"
-                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+                    className="mt-2 h-11 w-full rounded-xl border border-[#E3DED5] px-3 text-sm outline-none transition placeholder:text-[#A8A29A] focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="text-xs font-bold text-gray-500">تا قیمت</span>
+                  <span className="text-xs font-bold text-[#77736D]">تا قیمت</span>
                   <input
                     inputMode="numeric"
                     value={maxPrice}
                     onChange={(event) => setMaxPrice(event.target.value)}
                     placeholder="مثلا 800000"
-                    className="mt-2 h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+                    className="mt-2 h-11 w-full rounded-xl border border-[#E3DED5] px-3 text-sm outline-none transition placeholder:text-[#A8A29A] focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="mt-6 border-t border-gray-100 pt-6">
+            <div className="mt-6 border-t border-[#E3DED5] pt-6">
               <label
                 htmlFor="product-sort"
-                className="text-sm font-black text-[var(--dark)]"
+                className="text-sm font-black text-[#333230]"
               >
                 مرتب‌سازی
               </label>
@@ -251,7 +327,7 @@ export default function ProductsClient() {
                   setOrdering(event.target.value);
                   setPage(1);
                 }}
-                className="mt-3 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-black text-gray-700 outline-none transition focus:border-[var(--secondary)] focus:ring-4 focus:ring-sky-100"
+                className="mt-3 h-11 w-full rounded-xl border border-[#E3DED5] bg-white px-3 text-sm font-black text-[#333230] outline-none transition focus:border-[#D2AD70] focus:ring-4 focus:ring-[#D2AD70]/20"
               >
                 {productSortOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -263,14 +339,16 @@ export default function ProductsClient() {
           </aside>
 
           <div ref={resultsRef} className="scroll-mt-28" aria-busy={isLoading}>
-            <div className="mb-5 flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+            <div className="mb-5 flex flex-col justify-between gap-3 rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.55)] sm:flex-row sm:items-center">
               <div>
-                <p className="text-sm font-black text-[var(--dark)]">
+                <p className="text-sm font-black text-[#333230]">
                   {count > 0 ? `${count.toLocaleString("fa-IR")} محصول` : "محصولی یافت نشد"}
                 </p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#77736D]">
                   {getFilterSummary({
                     categoryTitle: activeCategoryTitle,
+                    productTypeLabel: activeProductTypeLabel,
+                    giftUsageLabel: activeGiftUsageLabel,
                     search: debouncedSearch,
                     minPrice: debouncedMinPrice,
                     maxPrice: debouncedMaxPrice,
@@ -283,6 +361,8 @@ export default function ProductsClient() {
                   type="button"
                   onClick={() => {
                     setCategory("");
+                    setProductType("");
+                    setGiftUsage("");
                     setSearch("");
                     setDebouncedSearch("");
                     setMinPrice("");
@@ -292,7 +372,7 @@ export default function ProductsClient() {
                     setOrdering("-created_at");
                     setPage(1);
                   }}
-                  className="h-10 rounded-full border border-gray-200 px-4 text-sm font-black text-gray-700 transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                  className="h-10 rounded-xl border border-[#E3DED5] px-4 text-sm font-black text-[#77736D] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] hover:text-[#333230]"
                 >
                   پاک کردن فیلترها
                 </button>
@@ -334,10 +414,10 @@ export default function ProductsClient() {
 
 function filterButtonClass(isActive: boolean) {
   return [
-    "h-11 rounded-lg px-4 text-right text-sm font-black transition",
+    "flex h-11 items-center justify-center rounded-xl px-3 text-center text-sm font-black transition",
     isActive
-      ? "bg-[var(--secondary)] text-white shadow-sm"
-      : "bg-gray-50 text-gray-700 hover:bg-sky-50 hover:text-[var(--secondary)]",
+      ? "border border-[#D2AD70]/55 bg-[#F6F1E8] text-[#B2894C]"
+      : "border border-transparent bg-[#FAFAF8] text-[#77736D] hover:border-[#D2AD70]/35 hover:bg-[#F6F1E8] hover:text-[#333230]",
   ].join(" ");
 }
 
@@ -347,17 +427,23 @@ function normalizePrice(value: string) {
 
 function getFilterSummary({
   categoryTitle,
+  productTypeLabel,
+  giftUsageLabel,
   search,
   minPrice,
   maxPrice,
 }: {
   categoryTitle?: string;
+  productTypeLabel?: string;
+  giftUsageLabel?: string;
   search: string;
   minPrice: string;
   maxPrice: string;
 }) {
   const filters = [
     categoryTitle ? `دسته: ${categoryTitle}` : "",
+    productTypeLabel ? `نوع: ${productTypeLabel}` : "",
+    giftUsageLabel ? `کاربرد: ${giftUsageLabel}` : "",
     search ? `جستجو: ${search}` : "",
     minPrice ? `از ${Number(minPrice).toLocaleString("fa-IR")} تومان` : "",
     maxPrice ? `تا ${Number(maxPrice).toLocaleString("fa-IR")} تومان` : "",
@@ -372,13 +458,13 @@ function ProductGridSkeleton() {
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
-          className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+          className="overflow-hidden rounded-2xl border border-[#E3DED5] bg-white shadow-sm"
         >
-          <div className="aspect-[4/3] animate-pulse bg-gray-100" />
+          <div className="aspect-[4/3] animate-pulse bg-[#E3DED5]" />
           <div className="space-y-4 p-5">
-            <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
-            <div className="h-12 animate-pulse rounded bg-gray-100" />
-            <div className="h-10 animate-pulse rounded bg-gray-100" />
+            <div className="h-5 w-3/4 animate-pulse rounded bg-[#E3DED5]" />
+            <div className="h-12 animate-pulse rounded bg-[#E3DED5]" />
+            <div className="h-10 animate-pulse rounded bg-[#E3DED5]" />
           </div>
         </div>
       ))}
@@ -388,9 +474,9 @@ function ProductGridSkeleton() {
 
 function EmptyProductsState() {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
-      <h2 className="text-xl font-black text-[var(--dark)]">محصولی پیدا نشد</h2>
-      <p className="mx-auto mt-3 max-w-md leading-7 text-gray-600">
+    <div className="rounded-2xl border border-dashed border-[#D2AD70]/50 bg-[#F6F1E8] px-6 py-16 text-center">
+      <h2 className="text-xl font-black text-[#333230]">محصولی پیدا نشد</h2>
+      <p className="mx-auto mt-3 max-w-md leading-7 text-[#77736D]">
         عبارت جستجو یا دسته‌بندی را تغییر بده تا محصولات بیشتری نمایش داده شود.
       </p>
     </div>

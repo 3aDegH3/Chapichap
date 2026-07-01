@@ -129,6 +129,15 @@ export type NotificationItem = {
   created_at: string;
 };
 
+export type NotificationListData = {
+  notifications: NotificationItem[];
+  unread_count: number;
+};
+
+export type NotificationSummary = {
+  unread_count: number;
+};
+
 async function unwrap<T>(request: Promise<{ data: ApiEnvelope<T> }>) {
   const response = await request;
   return response.data.data;
@@ -222,7 +231,11 @@ export function closeTicket(id: number | string) {
 }
 
 export function getNotifications() {
-  return unwrap(api.get<ApiEnvelope<{ notifications: NotificationItem[] }>>("/account/notifications/"));
+  return unwrap(api.get<ApiEnvelope<NotificationListData>>("/account/notifications/"));
+}
+
+export function getNotificationSummary() {
+  return unwrap(api.get<ApiEnvelope<NotificationSummary>>("/account/notifications/summary/"));
 }
 
 export function readNotification(id: number) {

@@ -45,7 +45,7 @@ export default function ProductGallery({ product }: { product: ProductDetail }) 
 
   return (
     <div>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-gradient-to-br from-sky-50 via-white to-pink-50 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-[#E3DED5] bg-[#F6F1E8] shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
         <div className="aspect-square">
           {activeImage?.url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -57,7 +57,7 @@ export default function ProductGallery({ product }: { product: ProductDetail }) 
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center p-8">
-              <div className="flex h-32 w-32 items-center justify-center rounded-full border border-sky-100 bg-white text-5xl font-black text-[var(--secondary)] shadow-sm">
+              <div className="flex h-32 w-32 items-center justify-center rounded-full border border-[#D2AD70]/50 bg-white text-5xl font-black text-[#B2894C] shadow-sm">
                 چاپ
               </div>
             </div>
@@ -76,10 +76,10 @@ export default function ProductGallery({ product }: { product: ProductDetail }) 
                 type="button"
                 onClick={() => setActiveId(image.id)}
                 className={[
-                  "aspect-square overflow-hidden rounded-lg border bg-white transition",
+                  "aspect-square overflow-hidden rounded-xl border bg-white transition",
                   isActive
-                    ? "border-[var(--secondary)] ring-4 ring-sky-100"
-                    : "border-gray-200 hover:border-[var(--secondary)]",
+                    ? "border-[#D2AD70] ring-4 ring-[#D2AD70]/20"
+                    : "border-[#E3DED5] hover:border-[#D2AD70]",
                 ].join(" ")}
                 aria-label={`نمایش تصویر ${image.alt}`}
               >
@@ -92,7 +92,7 @@ export default function ProductGallery({ product }: { product: ProductDetail }) 
                     loading="lazy"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-sm font-black text-[var(--secondary)]">
+                  <span className="flex h-full w-full items-center justify-center text-sm font-black text-[#B2894C]">
                     چاپ
                   </span>
                 )}

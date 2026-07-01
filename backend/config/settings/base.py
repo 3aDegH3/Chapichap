@@ -50,13 +50,14 @@ INSTALLED_APPS = [
 
     # Local apps
     "apps.core",
-    "apps.accounts",
+    "apps.accounts.apps.AccountsConfig",
     "apps.products",
     "apps.orders",
     "apps.design_request",
     "apps.portfolio",
     "apps.payments",
     "apps.content",
+    "apps.admin_panel",
 ]
 
 
@@ -202,6 +203,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
+
+    "DEFAULT_THROTTLE_RATES": {
+        "contact_messages": "5/hour",
+    },
 }
 
 

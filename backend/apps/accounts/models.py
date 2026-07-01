@@ -3,20 +3,48 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+from apps.core.file_security import validate_customer_upload_file
+
 
 class User(AbstractUser):
+    class AdminRole(models.TextChoices):
+        SUPER_ADMIN = "super_admin", "Super Admin"
+        ORDER_MANAGER = "order_manager", "مدیر سفارش‌ها"
+        PRODUCT_MANAGER = "product_manager", "مدیر محصولات"
+        SUPPORT = "support", "پشتیبانی"
+
     username = models.CharField(max_length=150, unique=True, blank=True, null=True)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     phone_verified = models.BooleanField(default=False)
     email_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to="users/avatars/", blank=True, null=True)
+    admin_role = models.CharField(
+        max_length=32,
+        choices=AdminRole.choices,
+        blank=True,
+        default="",
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
     def __str__(self):
         return self.email
+
+    @property
+    def effective_admin_role(self):
+        if self.is_superuser:
+            return self.AdminRole.SUPER_ADMIN
+        if self.admin_role:
+            return self.admin_role
+        if self.is_staff:
+            return self.AdminRole.SUPPORT
+        return ""
+
+    @property
+    def is_admin_panel_user(self):
+        return bool(self.is_active and (self.is_staff or self.is_superuser or self.admin_role))
 
 
 class VerificationChallenge(models.Model):
@@ -178,7 +206,7 @@ class SupportMessage(models.Model):
 
 class SupportAttachment(models.Model):
     message = models.ForeignKey(SupportMessage, on_delete=models.CASCADE, related_name="attachments")
-    file = models.FileField(upload_to="support-attachments/")
+    file = models.FileField(upload_to="support-attachments/", validators=[validate_customer_upload_file])
     filename = models.CharField(max_length=255)
     file_size = models.PositiveIntegerField(default=0)
     mime_type = models.CharField(max_length=120, blank=True)

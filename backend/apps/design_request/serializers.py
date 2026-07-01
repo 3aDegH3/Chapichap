@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.accounts.services import notify_design_request_received
+from apps.core.file_security import make_secure_customer_filename, normalize_customer_content_type
 from apps.products.serializers import ProductSerializer
 
 from .models import DesignRequest, UploadedFile
@@ -38,11 +40,13 @@ class UploadedFileSerializer(serializers.ModelSerializer):
         file = validated_data["file"]
         request = self.context.get("request")
         user = request.user if request and request.user.is_authenticated else None
+        original_name = file.name
+        file.name = make_secure_customer_filename(original_name)
 
         return UploadedFile.objects.create(
             file=file,
-            original_name=file.name,
-            content_type=getattr(file, "content_type", ""),
+            original_name=original_name,
+            content_type=normalize_customer_content_type(getattr(file, "content_type", ""), original_name),
             size=file.size,
             uploaded_by=user,
         )
@@ -78,6 +82,8 @@ class DesignRequestSerializer(serializers.ModelSerializer):
             "uploaded_file_id",
             "status",
             "status_label",
+            "admin_response",
+            "admin_response_at",
             "created_at",
             "updated_at",
         ]
@@ -87,6 +93,8 @@ class DesignRequestSerializer(serializers.ModelSerializer):
             "uploaded_file",
             "status",
             "status_label",
+            "admin_response",
+            "admin_response_at",
             "order_type_label",
             "created_at",
             "updated_at",
@@ -96,4 +104,6 @@ class DesignRequestSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             validated_data["user"] = request.user
-        return super().create(validated_data)
+        design_request = super().create(validated_data)
+        notify_design_request_received(design_request)
+        return design_request

@@ -47,16 +47,19 @@ class CartItem(models.Model):
 
     @property
     def line_total(self):
-        return self.product.price * self.quantity
+        return self.product.effective_price * self.quantity
 
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        PENDING_PAYMENT = "PENDING_PAYMENT", "در انتظار پرداخت"
-        PAID = "PAID", "پرداخت‌شده"
-        PROCESSING = "PROCESSING", "در حال آماده‌سازی"
-        READY = "READY", "آماده تحویل"
-        COMPLETED = "COMPLETED", "تکمیل‌شده"
+        REGISTERED = "REGISTERED", "ثبت‌شده"
+        REVIEWING = "REVIEWING", "در حال بررسی"
+        WAITING_DESIGN_APPROVAL = "WAITING_DESIGN_APPROVAL", "در انتظار تأیید طرح"
+        READY_FOR_PRINT = "READY_FOR_PRINT", "آماده چاپ"
+        PRINTING = "PRINTING", "در حال چاپ"
+        READY_TO_SHIP = "READY_TO_SHIP", "آماده ارسال"
+        SHIPPED = "SHIPPED", "ارسال‌شده"
+        DELIVERED = "DELIVERED", "تحویل‌شده"
         CANCELLED = "CANCELLED", "لغوشده"
 
     class DeliveryMethod(models.TextChoices):
@@ -64,6 +67,7 @@ class Order(models.Model):
         PICKUP = "PICKUP", "تحویل حضوری"
 
     order_number = models.CharField(max_length=32, unique=True)
+    idempotency_key = models.CharField(max_length=120, unique=True, blank=True, null=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -83,6 +87,8 @@ class Order(models.Model):
         choices=DeliveryMethod.choices,
         default=DeliveryMethod.SHIPPING,
     )
+    shipping_provider = models.CharField(max_length=120, blank=True)
+    shipping_tracking_code = models.CharField(max_length=120, blank=True)
     shipping_cost = models.DecimalField(max_digits=12, decimal_places=2)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -91,7 +97,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=24,
         choices=Status.choices,
-        default=Status.PENDING_PAYMENT,
+        default=Status.REGISTERED,
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -149,3 +155,23 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order.order_number}: {self.new_status}"
+
+
+class OrderInternalNote(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="internal_notes")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="order_internal_notes",
+        blank=True,
+        null=True,
+    )
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.author_id}"

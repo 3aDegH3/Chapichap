@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
 import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
@@ -108,20 +108,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-50 px-4 py-12">
-      <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-xl md:grid-cols-2">
-        <section className="p-6 sm:p-10">
-          <div className="mx-auto max-w-md">
-            <p className="text-sm font-black text-[var(--primary)]">
-              ساخت حساب
-            </p>
+    <main className="bg-[#F2EEE6] px-4 py-10 sm:py-14">
+      <div className="mx-auto grid max-w-6xl overflow-hidden rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8] shadow-[0_24px_70px_-42px_rgba(51,50,48,0.65)] md:grid-cols-[1.1fr_0.9fr]">
+        <section className="p-6 sm:p-10 lg:p-12">
+          <div className="mx-auto max-w-xl">
+            <p className="text-sm font-black text-[#B2894C]">ساخت حساب</p>
 
-            <h2 className="mt-3 text-3xl font-black text-[var(--dark)]">
-              ثبت‌نام در چاپینو
+            <h2 className="mt-3 text-3xl font-black leading-snug text-[#333230]">
+              شروع تجربه اختصاصی چاپی چاپ
             </h2>
 
-            <p className="mt-3 leading-7 text-gray-600">
-              حساب بساز تا بتوانی سفارش چاپ یا درخواست طراحی ثبت کنی.
+            <p className="mt-3 text-sm font-medium leading-7 text-[#77736D]">
+              حساب بساز تا سفارش چاپ، درخواست طراحی و پیگیری مراحل سفارش‌هایت
+              ساده و مرتب بماند.
             </p>
 
             {serverError && (
@@ -130,28 +129,33 @@ export default function RegisterPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-              <Input
-                id="first_name"
-                label="نام"
-                placeholder="نام"
-                error={errors.first_name?.message}
-                {...register("first_name")}
-              />
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-8 grid gap-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Input
+                  id="first_name"
+                  label="نام"
+                  placeholder="نام"
+                  error={errors.first_name?.message}
+                  className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
+                  {...register("first_name")}
+                />
 
-              <Input
-                id="last_name"
-                label="نام خانوادگی"
-                placeholder="نام خانوادگی"
-                error={errors.last_name?.message}
-                {...register("last_name")}
-              />
+                <Input
+                  id="last_name"
+                  label="نام خانوادگی"
+                  placeholder="نام خانوادگی"
+                  error={errors.last_name?.message}
+                  className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
+                  {...register("last_name")}
+                />
+              </div>
 
               <Input
                 id="username"
                 label="نام کاربری"
                 placeholder="مثلاً sadegh"
                 error={errors.username?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("username")}
               />
 
@@ -161,6 +165,7 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="example@email.com"
                 error={errors.email?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("email")}
               />
 
@@ -169,6 +174,7 @@ export default function RegisterPage() {
                 label="شماره موبایل"
                 placeholder="09120000000"
                 error={errors.phone_number?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("phone_number")}
               />
 
@@ -178,24 +184,24 @@ export default function RegisterPage() {
                 type="password"
                 placeholder="حداقل ۶ کاراکتر"
                 error={errors.password?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("password")}
               />
 
-              <Button
+              <button
                 type="submit"
-                className="w-full"
-                size="lg"
-                isLoading={isSubmitting}
+                disabled={isSubmitting}
+                className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-[#D2AD70] px-7 text-base font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                ثبت‌نام
-              </Button>
+                {isSubmitting ? "در حال ساخت حساب..." : "ثبت‌نام"}
+              </button>
             </form>
 
-            <p className="mt-6 text-center text-sm font-bold text-gray-600">
+            <p className="mt-6 text-center text-sm font-bold text-[#77736D]">
               قبلاً ثبت‌نام کرده‌ای؟{" "}
               <Link
                 href="/login"
-                className="text-[var(--primary)] hover:underline"
+                className="text-[#B2894C] hover:text-[#333230]"
               >
                 وارد شو
               </Link>
@@ -203,24 +209,29 @@ export default function RegisterPage() {
           </div>
         </section>
 
-        <section className="relative hidden bg-[var(--dark)] p-10 text-white md:block">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -right-16 top-16 h-56 w-56 rounded-full bg-[var(--primary)] opacity-30 blur-3xl" />
-            <div className="absolute -left-16 bottom-16 h-56 w-56 rounded-full bg-[var(--secondary)] opacity-30 blur-3xl" />
-            <div className="absolute left-1/3 top-1/2 h-40 w-40 rounded-full bg-[var(--accent)] opacity-20 blur-3xl" />
-          </div>
-
-          <div className="relative flex h-full flex-col justify-between">
+        <section className="relative hidden border-r border-[#E3DED5] bg-[#F6F1E8] p-8 md:block lg:p-10">
+          <div className="flex h-full min-h-[620px] flex-col justify-between">
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary)] text-xl font-black">
-                چ
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white shadow-[0_16px_34px_-24px_rgba(51,50,48,0.75)]">
+                <Image
+                  src="/brand/logo.png"
+                  alt="لوگوی چاپی چاپ"
+                  width={160}
+                  height={160}
+                  priority
+                  className="h-full w-full object-contain"
+                />
               </div>
 
-              <h1 className="mt-8 text-3xl font-black leading-snug">
+              <p className="mt-8 text-sm font-black text-[#B2894C]">
+                حساب اختصاصی چاپ و هدیه
+              </p>
+
+              <h1 className="mt-3 text-3xl font-black leading-snug text-[#333230]">
                 هدیه اختصاصی از همین‌جا شروع می‌شود
               </h1>
 
-              <p className="mt-4 max-w-sm leading-8 text-white/70">
+              <p className="mt-4 max-w-sm text-sm font-medium leading-8 text-[#77736D]">
                 با ساخت حساب، مسیر سفارش چاپ، طراحی و پیگیری سفارش‌ها برایت
                 ساده‌تر می‌شود.
               </p>
@@ -231,7 +242,7 @@ export default function RegisterPage() {
                 (item) => (
                   <div
                     key={item}
-                    className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-black backdrop-blur"
+                    className="rounded-xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-black text-[#333230]"
                   >
                     {item}
                   </div>

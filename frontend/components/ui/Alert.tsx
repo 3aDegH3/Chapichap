@@ -12,7 +12,7 @@ type AlertProps = {
 const variants: Record<AlertVariant, string> = {
   error: "border-red-200 bg-red-50 text-red-700",
   success: "border-green-200 bg-green-50 text-green-700",
-  info: "border-sky-200 bg-sky-50 text-sky-700",
+  info: "border-[#D2AD70]/40 bg-[#F6F1E8] text-[#333230]",
 };
 
 export default function Alert({
@@ -23,7 +23,7 @@ export default function Alert({
   return (
     <div
       className={cn(
-        "rounded-2xl border px-4 py-3 text-sm font-bold leading-7",
+        "rounded-xl border px-4 py-3 text-sm font-bold leading-7",
         variants[variant],
         className
       )}

@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
+from apps.admin_panel.models import AdminActivityLog
+from apps.admin_panel.services import log_admin_activity
+
 from .models import (
     CustomerAddress,
     CustomerOffer,
@@ -16,13 +19,29 @@ from .models import (
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ("Additional Info", {"fields": ("phone_number", "phone_verified", "email_verified", "avatar")}),
+        ("Additional Info", {"fields": ("phone_number", "phone_verified", "email_verified", "avatar", "admin_role")}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ("Additional Info", {"fields": ("phone_number", "phone_verified", "email_verified", "avatar")}),
+        ("Additional Info", {"fields": ("phone_number", "phone_verified", "email_verified", "avatar", "admin_role")}),
     )
-    list_display = ("username", "email", "phone_number", "email_verified", "phone_verified", "is_staff", "is_active")
+    list_display = ("username", "email", "phone_number", "admin_role", "email_verified", "phone_verified", "is_staff", "is_active")
+    list_filter = UserAdmin.list_filter + ("admin_role",)
     search_fields = ("username", "email", "phone_number")
+
+    def save_model(self, request, obj, form, change):
+        access_fields = {"admin_role", "is_staff", "is_superuser", "is_active"}
+        access_changed = bool(access_fields.intersection(form.changed_data))
+        super().save_model(request, obj, form, change)
+
+        if access_changed:
+            changed_labels = "، ".join(sorted(access_fields.intersection(form.changed_data)))
+            log_admin_activity(
+                request,
+                action=AdminActivityLog.Action.ADMIN_ACCESS_CHANGED,
+                entity_type="admin_user",
+                entity_id=obj.pk,
+                description=f"دسترسی کاربر {obj.email} تغییر کرد. فیلدها: {changed_labels}",
+            )
 
 
 @admin.register(VerificationChallenge)

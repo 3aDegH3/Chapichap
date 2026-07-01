@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -8,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import Alert from "@/components/ui/Alert";
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiErrorMessage } from "@/lib/api";
@@ -59,15 +59,26 @@ export default function VerifyEmailPage() {
   }
 
   if (isLoading || !user) {
-    return <main className="min-h-[calc(100vh-64px)] bg-gray-50 px-4 py-12"><div className="mx-auto h-64 max-w-xl animate-pulse rounded-2xl bg-white" /></main>;
+    return (
+      <main className="bg-[#F2EEE6] px-4 py-10 sm:py-14">
+        <div className="mx-auto h-72 max-w-xl animate-pulse rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8]" />
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-50 px-4 py-12">
-      <section className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-black text-[var(--secondary)]">تایید ایمیل</p>
-        <h1 className="mt-3 text-3xl font-black text-[var(--dark)]">کد تایید را وارد کنید</h1>
-        <p className="mt-3 leading-7 text-gray-600">{user.email}</p>
+    <main className="bg-[#F2EEE6] px-4 py-10 sm:py-14">
+      <section className="mx-auto max-w-xl overflow-hidden rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8] p-6 shadow-[0_24px_70px_-42px_rgba(51,50,48,0.65)] sm:p-8">
+        <div className="flex items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white">
+            <Image src="/brand/logo.png" alt="لوگوی چاپی چاپ" width={128} height={128} className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-[#B2894C]">تایید ایمیل</p>
+            <h1 className="mt-1 text-2xl font-black text-[#333230]">کد تایید را وارد کنید</h1>
+          </div>
+        </div>
+        <p className="mt-5 rounded-xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-black text-[#333230]">{user.email}</p>
         {user.email_verified ? (
           <Alert variant="success" className="mt-6">ایمیل شما تایید شده است.</Alert>
         ) : (
@@ -75,13 +86,34 @@ export default function VerifyEmailPage() {
             {message && <Alert variant="success" className="mt-6">{message}</Alert>}
             {error && <Alert variant="error" className="mt-6">{error}</Alert>}
             <form onSubmit={handleSubmit(submit)} className="mt-8 space-y-5">
-              <Input id="code" label="کد تایید" inputMode="numeric" placeholder="123456" error={errors.code?.message} {...register("code")} />
-              <Button type="submit" className="w-full" size="lg" isLoading={isSubmitting}>تایید ایمیل</Button>
+              <Input
+                id="code"
+                label="کد تایید"
+                inputMode="numeric"
+                placeholder="123456"
+                error={errors.code?.message}
+                className="rounded-xl border-[#E3DED5] bg-white tracking-[0.35em] focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
+                {...register("code")}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-[#D2AD70] px-7 text-base font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? "در حال تایید..." : "تایید ایمیل"}
+              </button>
             </form>
-            <Button type="button" variant="outline" className="mt-3 w-full" isLoading={isSending} onClick={() => void resendCode()}>ارسال دوباره کد</Button>
+            <button
+              type="button"
+              disabled={isSending}
+              onClick={() => void resendCode()}
+              className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-5 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSending ? "در حال ارسال..." : "ارسال دوباره کد"}
+            </button>
           </>
         )}
-        <Link href="/account" className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[var(--secondary)] px-5 text-sm font-black text-white">ورود به پنل حساب</Link>
+        <Link href="/account" className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-5 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]">ورود به پنل حساب</Link>
       </section>
     </main>
   );

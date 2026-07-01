@@ -7,6 +7,9 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
+from apps.accounts.services import notify_order_registered
+from apps.products.models import InventoryChange, Product
+
 from .models import Order, OrderItem, OrderStatusHistory
 
 
@@ -44,8 +47,12 @@ def calculate_checkout_preview(cart, delivery_method=DeliveryMethod.SHIPPING):
         product = cart_item.product
         if not product.is_active:
             raise ValidationError(f"محصول «{product.title}» در حال حاضر قابل سفارش نیست.")
+        if not product.is_available:
+            raise ValidationError(f"محصول «{product.title}» در حال حاضر موجود نیست.")
+        if not product.unlimited_stock and cart_item.quantity > product.stock_quantity:
+            raise ValidationError(f"موجودی محصول «{product.title}» فقط {product.stock_quantity} عدد است.")
 
-        unit_price = product.price
+        unit_price = product.effective_price
         line_total = unit_price * cart_item.quantity
         subtotal += line_total
 
@@ -175,6 +182,7 @@ def create_order_from_cart(cart, checkout_data, user=None):
 
     order = Order.objects.create(
         order_number=generate_order_number(),
+        idempotency_key=(checkout_data.get("idempotency_key") or "").strip() or None,
         user=user if user and user.is_authenticated else None,
         session_key=locked_cart.session_key,
         receiver_name=checkout_data["receiver_name"],
@@ -189,7 +197,7 @@ def create_order_from_cart(cart, checkout_data, user=None):
         discount_amount=discount_amount,
         coupon_code=(checkout_data.get("coupon_code") or "").strip(),
         total_amount=total_amount,
-        status=Order.Status.PENDING_PAYMENT,
+        status=Order.Status.REGISTERED,
         notes=checkout_data.get("notes", ""),
     )
 
@@ -210,12 +218,31 @@ def create_order_from_cart(cart, checkout_data, user=None):
         )
 
     OrderItem.objects.bulk_create(order_items)
+    for item in preview["items"]:
+        product = Product.objects.select_for_update().get(id=item["product_id"])
+        if product.unlimited_stock:
+            continue
+        if product.stock_quantity < item["quantity"]:
+            raise ValidationError(f"موجودی محصول «{item['title']}» برای ثبت سفارش کافی نیست.")
+
+        previous_quantity = product.stock_quantity
+        product.stock_quantity = previous_quantity - item["quantity"]
+        product.save(update_fields=["stock_quantity", "updated_at"])
+        InventoryChange.objects.create(
+            product=product,
+            previous_quantity=previous_quantity,
+            new_quantity=product.stock_quantity,
+            change_type=InventoryChange.ChangeType.ORDER_PLACED,
+            note=f"ثبت سفارش {order.order_number}",
+            changed_by=user if user and user.is_authenticated else None,
+        )
+
     OrderStatusHistory.objects.create(
         order=order,
         previous_status="",
-        new_status=Order.Status.PENDING_PAYMENT,
+        new_status=Order.Status.REGISTERED,
         title="سفارش ثبت شد",
-        description="سفارش شما ثبت شده و در انتظار پرداخت یا هماهنگی است.",
+        description="سفارش شما ثبت شده و برای بررسی اولیه در صف تیم چاپی چاپ قرار گرفت.",
         visible_to_customer=True,
         created_by=user if user and user.is_authenticated else None,
     )
@@ -223,5 +250,6 @@ def create_order_from_cart(cart, checkout_data, user=None):
         offer.__class__.objects.filter(pk=offer.pk).update(usage_count=F("usage_count") + 1)
     maybe_save_checkout_address(checkout_data, user=user)
     locked_cart.items.all().delete()
+    notify_order_registered(order)
 
     return order

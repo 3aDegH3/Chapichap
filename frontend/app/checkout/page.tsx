@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,6 +21,7 @@ import {
   createOrder,
   getCheckoutPreview,
   type CheckoutPreview,
+  type CheckoutCartItemPayload,
   type CheckoutDeliveryMethod,
 } from "@/lib/checkout-api";
 import {
@@ -29,11 +30,11 @@ import {
   type PaymentMethod,
   type PaymentMethodCode,
 } from "@/lib/payment-api";
+import { siteInfo } from "@/lib/site-info";
 
 const CHECKOUT_STORAGE_KEY = "chapichap.checkout.v1";
-const PICKUP_ADDRESS = "تهران، مرکز چاپ چی چاپ؛ هماهنگی زمان مراجعه پس از ثبت سفارش انجام می‌شود.";
 const IN_PERSON_PAYMENT_INSTRUCTIONS =
-  "پس از ثبت سفارش، برای هماهنگی زمان پرداخت و تحویل با شما تماس گرفته می‌شود. سفارش تا زمان تأیید پرداخت در وضعیت در انتظار پرداخت باقی می‌ماند.";
+  "سفارش بدون پرداخت آنلاین ثبت می‌شود و تیم چاپی چاپ برای هماهنگی پرداخت و ادامه فرایند با شما تماس می‌گیرد.";
 
 const checkoutSchema = z.object({
   receiver_name: z.string().trim().min(2, "نام و نام خانوادگی را کامل وارد کن."),
@@ -50,7 +51,7 @@ const checkoutSchema = z.object({
     .trim()
     .regex(/^[0-9۰-۹٠-٩]{10}$/, "کد پستی باید ۱۰ رقم باشد."),
   delivery_method: z.enum(["SHIPPING", "PICKUP"]),
-  payment_method: z.enum(["IN_PERSON"]),
+  payment_method: z.enum(["IN_PERSON", "ONLINE_GATEWAY", "BANK_TRANSFER", "CASH_ON_DELIVERY"]),
   save_address: z.boolean(),
   address_title: z.string().trim().optional(),
   coupon_code: z.string().trim().optional(),
@@ -58,6 +59,7 @@ const checkoutSchema = z.object({
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+type AddressMode = "saved" | "new";
 
 const defaultCheckoutValues: CheckoutFormValues = {
   receiver_name: "",
@@ -90,20 +92,59 @@ function formatPrice(price: number | string) {
   return new Intl.NumberFormat("fa-IR").format(Number(price) || 0);
 }
 
+function toCheckoutItems(
+  items: ReturnType<typeof useCart>["items"]
+): CheckoutCartItemPayload[] {
+  return items.map((item) => ({
+    product_id: item.product.id,
+    quantity: item.quantity,
+  }));
+}
+
+function previewToCheckoutItems(preview: CheckoutPreview | null): CheckoutCartItemPayload[] {
+  return (
+    preview?.items.map((item) => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+    })) || []
+  );
+}
+
+function createPaymentIdempotencyKey(orderId: number, method: PaymentMethodCode) {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `payment:${orderId}:${method}:${randomPart}`;
+}
+
+function createOrderIdempotencyKey() {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `order:${randomPart}`;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
-  const { clearCart, isReady, totalItems } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { clearCart, isReady, items, totalItems } = useCart();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [initialDraft] = useState<CheckoutFormValues | null>(readCheckoutDraft);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [addressMode, setAddressMode] = useState<AddressMode>("saved");
   const [offer, setOffer] = useState<ValidatedOffer | null>(null);
   const [offerError, setOfferError] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCompletingOrder, setIsCompletingOrder] = useState(false);
   const [error, setError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const orderIdempotencyKeyRef = useRef("");
 
   const {
     control,
@@ -121,6 +162,13 @@ export default function CheckoutPage() {
   const deliveryMethod = watchedValues.delivery_method || "SHIPPING";
   const paymentMethod = watchedValues.payment_method || "IN_PERSON";
   const couponCode = watchedValues.coupon_code || "";
+  const selectedAddress = addresses.find((address) => address.id === selectedAddressId) || null;
+  const shouldShowAddressForm = addressMode === "new" || !isAuthenticated || addresses.length === 0;
+  const selectedPaymentMethod =
+    paymentMethods.find((method) => method.code === paymentMethod) || null;
+  const isPaymentMethodActive = selectedPaymentMethod
+    ? selectedPaymentMethod.is_active
+    : paymentMethod === "IN_PERSON";
 
   const loadPreview = useCallback(async (method: CheckoutDeliveryMethod) => {
     setIsLoading(true);
@@ -129,14 +177,14 @@ export default function CheckoutPage() {
     try {
       setOffer(null);
       setOfferError("");
-      const data = await getCheckoutPreview(method);
+      const data = await getCheckoutPreview(method, toCheckoutItems(items));
       setPreview(data);
     } catch (previewError) {
       setError(getApiErrorMessage(previewError));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [items]);
 
   const loadPaymentMethods = useCallback(async () => {
     try {
@@ -156,6 +204,7 @@ export default function CheckoutPage() {
   }, []);
 
   const applyAddress = useCallback((address: CustomerAddress) => {
+    setAddressMode("saved");
     setSelectedAddressId(address.id);
     setValue("receiver_name", address.receiver_name, { shouldValidate: true });
     setValue("phone", address.phone, { shouldValidate: true });
@@ -165,9 +214,23 @@ export default function CheckoutPage() {
     setValue("postal_code", address.postal_code, { shouldValidate: true });
   }, [setValue]);
 
+  const useNewAddress = useCallback(() => {
+    setAddressMode("new");
+    setSelectedAddressId(null);
+    setValue("receiver_name", "", { shouldValidate: true });
+    setValue("phone", "", { shouldValidate: true });
+    setValue("province", "", { shouldValidate: true });
+    setValue("city", "", { shouldValidate: true });
+    setValue("address", "", { shouldValidate: true });
+    setValue("postal_code", "", { shouldValidate: true });
+    setValue("save_address", Boolean(isAuthenticated));
+    setValue("address_title", "");
+  }, [isAuthenticated, setValue]);
+
   const loadAddresses = useCallback(async () => {
     if (!isAuthenticated) {
       setAddresses([]);
+      setAddressMode("new");
       return;
     }
 
@@ -175,17 +238,27 @@ export default function CheckoutPage() {
       const data = await getAddresses();
       setAddresses(data.addresses);
 
+      if (data.addresses.length === 0) {
+        setAddressMode("new");
+        return;
+      }
+
       const defaultAddress = data.addresses.find((address) => address.is_default) || data.addresses[0];
-      if (defaultAddress && !selectedAddressId) {
+      if (addressMode === "saved" && defaultAddress && !selectedAddressId) {
         applyAddress(defaultAddress);
       }
     } catch {
       setAddresses([]);
     }
-  }, [applyAddress, isAuthenticated, selectedAddressId]);
+  }, [addressMode, applyAddress, isAuthenticated, selectedAddressId]);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (isAuthLoading || !isReady || isCompletingOrder) return;
+
+    if (!isAuthenticated) {
+      router.replace("/login?next=/checkout");
+      return;
+    }
 
     if (totalItems === 0) {
       router.replace("/cart");
@@ -199,7 +272,18 @@ export default function CheckoutPage() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [deliveryMethod, isReady, loadAddresses, loadPaymentMethods, loadPreview, router, totalItems]);
+  }, [
+    deliveryMethod,
+    isCompletingOrder,
+    isAuthenticated,
+    isAuthLoading,
+    isReady,
+    loadAddresses,
+    loadPaymentMethods,
+    loadPreview,
+    router,
+    totalItems,
+  ]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -207,6 +291,19 @@ export default function CheckoutPage() {
       JSON.stringify({ ...defaultCheckoutValues, ...watchedValues })
     );
   }, [watchedValues]);
+
+  useEffect(() => {
+    if (paymentMethods.length === 0) return;
+
+    const activeSelectedMethod = paymentMethods.some(
+      (method) => method.code === paymentMethod && method.is_active
+    );
+
+    if (!activeSelectedMethod) {
+      const fallbackMethod = paymentMethods.find((method) => method.is_active)?.code || "IN_PERSON";
+      setValue("payment_method", fallbackMethod, { shouldValidate: true });
+    }
+  }, [paymentMethod, paymentMethods, setValue]);
 
   async function applyCoupon() {
     if (!preview || !couponCode.trim()) {
@@ -234,18 +331,42 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     try {
+      const orderItems = previewToCheckoutItems(preview);
+      if (orderItems.length === 0) {
+        setSubmitError("آیتم‌های سفارش آماده نیستند. یک بار صفحه را تازه‌سازی کن یا به سبد خرید برگرد.");
+        return;
+      }
+
+      const { payment_method, ...orderValues } = values;
+      if (!orderIdempotencyKeyRef.current) {
+        orderIdempotencyKeyRef.current = createOrderIdempotencyKey();
+      }
+
       const order = await createOrder({
+        idempotency_key: orderIdempotencyKeyRef.current,
         address_id: selectedAddressId,
-        ...values,
+        ...orderValues,
         coupon_code: offer ? values.coupon_code?.trim() : "",
         notes: values.notes || "",
+        items: orderItems,
       });
 
+      setIsCompletingOrder(true);
       window.localStorage.removeItem(CHECKOUT_STORAGE_KEY);
       clearCart();
 
       try {
-        const payment = await initializePayment(order.id, values.payment_method);
+        const payment = await initializePayment(
+          order.id,
+          payment_method,
+          createPaymentIdempotencyKey(order.id, payment_method)
+        );
+
+        if (payment.next_action.type === "REDIRECT" && payment.next_action.url) {
+          router.replace(payment.next_action.url);
+          return;
+        }
+
         router.replace(`/order/success?order=${order.id}&payment=${payment.id}`);
       } catch (paymentError) {
         router.replace(
@@ -255,6 +376,7 @@ export default function CheckoutPage() {
         );
       }
     } catch (orderError) {
+      setIsCompletingOrder(false);
       const message = getApiErrorMessage(orderError);
       setSubmitError(message);
       router.push(`/order/error?message=${encodeURIComponent(message)}`);
@@ -265,22 +387,22 @@ export default function CheckoutPage() {
   const payableTotal = Math.max(Number(preview?.total_amount || 0) - discountAmount, 0);
 
   return (
-    <main className="bg-white">
-      <section className="border-b border-gray-100 bg-gradient-to-b from-sky-50/80 to-white">
+    <main className="bg-[#FAFAF8]">
+      <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-sm font-black text-[var(--secondary)]">تسویه حساب</p>
+          <p className="text-sm font-black text-[#B2894C]">تسویه حساب</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-black leading-tight text-[var(--dark)] sm:text-5xl">
+              <h1 className="text-3xl font-black leading-tight text-[#333230] sm:text-5xl">
                 مرور نهایی سفارش
               </h1>
-              <p className="mt-4 max-w-2xl leading-8 text-gray-600">
-                مبلغ‌ها از سمت سرور محاسبه و تأیید می‌شوند تا سفارش با قیمت درست ثبت شود.
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-8 text-[#77736D]">
+                اطلاعات گیرنده، روش تحویل و هزینه ارسال در سرور بررسی می‌شود تا سفارش آزمایشی با جزئیات درست ثبت شود.
               </p>
             </div>
             <Link
               href="/cart"
-              className="inline-flex h-12 w-fit items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+              className="inline-flex h-12 w-fit items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
             >
               ویرایش سبد خرید
             </Link>
@@ -293,20 +415,20 @@ export default function CheckoutPage() {
           {isLoading || !isReady ? (
             <CheckoutSkeleton />
           ) : error ? (
-            <div className="rounded-lg border border-red-100 bg-red-50 p-6">
+            <div className="rounded-2xl border border-red-100 bg-red-50 p-6">
               <h2 className="text-lg font-black text-red-700">امکان نمایش Checkout نیست</h2>
-              <p className="mt-3 leading-7 text-red-700">{error}</p>
+              <p className="mt-3 text-sm font-bold leading-7 text-red-700">{error}</p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => void loadPreview(deliveryMethod)}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-black text-white transition hover:opacity-90"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
                 >
                   تلاش دوباره
                 </button>
                 <Link
                   href="/cart"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-red-200 bg-white px-6 text-sm font-black text-red-700"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-red-200 bg-white px-6 text-sm font-black text-red-700"
                 >
                   بازگشت به سبد خرید
                 </Link>
@@ -314,12 +436,36 @@ export default function CheckoutPage() {
             </div>
           ) : preview ? (
             <div className="space-y-6">
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 className="text-xl font-black text-[var(--dark)]">اطلاعات گیرنده</h2>
+              <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-xl font-black text-[#333230]">آدرس تحویل</h2>
+                    <p className="mt-2 text-sm font-bold leading-7 text-[#77736D]">
+                      آدرس پیش‌فرض پنل کاربری به صورت خودکار انتخاب می‌شود.
+                    </p>
+                  </div>
 
-                {addresses.length > 0 && (
-                  <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50 p-4">
-                    <p className="text-sm font-black text-[var(--secondary)]">آدرس‌های ذخیره‌شده</p>
+                  {isAuthenticated && addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={useNewAddress}
+                      className="inline-flex h-11 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-4 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
+                    >
+                      آدرس جدید
+                    </button>
+                  )}
+                </div>
+
+                {isAuthenticated && addresses.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-black text-[#B2894C]">آدرس‌های ذخیره‌شده</p>
+                      {selectedAddress && addressMode === "saved" && (
+                        <span className="text-xs font-black text-[#77736D]">
+                          آدرس انتخاب‌شده: {selectedAddress.title}
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
                       {addresses.map((address) => (
                         <button
@@ -327,84 +473,142 @@ export default function CheckoutPage() {
                           type="button"
                           onClick={() => applyAddress(address)}
                           className={`rounded-lg border p-4 text-right text-sm transition ${
-                            selectedAddressId === address.id
-                              ? "border-[var(--secondary)] bg-white text-[var(--dark)]"
-                              : "border-sky-100 bg-white/70 text-gray-600 hover:border-[var(--secondary)]"
+                            addressMode === "saved" && selectedAddressId === address.id
+                              ? "border-[#D2AD70] bg-white text-[#333230] shadow-[0_12px_26px_-22px_rgba(51,50,48,0.65)]"
+                              : "border-[#E3DED5] bg-white/75 text-[#77736D] hover:border-[#D2AD70]"
                           }`}
                         >
-                          <span className="block font-black">{address.title}</span>
+                          <span className="flex flex-wrap items-center gap-2 font-black">
+                            {address.title}
+                            {address.is_default && (
+                              <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] text-green-700">
+                                پیش‌فرض
+                              </span>
+                            )}
+                          </span>
                           <span className="mt-2 block font-bold leading-7">
-                            {address.receiver_name}، {address.city}، {address.address}
+                            {address.receiver_name}، {address.phone}
+                          </span>
+                          <span className="mt-2 block font-bold leading-7">
+                            {address.province}، {address.city}، {address.address}
+                          </span>
+                          <span className="mt-2 block text-xs font-bold text-[#77736D]">
+                            کد پستی: {address.postal_code}
                           </span>
                         </button>
                       ))}
                     </div>
-                    {selectedAddressId && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAddressId(null)}
-                        className="mt-3 text-xs font-black text-[var(--secondary)]"
-                      >
-                        ثبت آدرس جدید به‌جای آدرس ذخیره‌شده
-                      </button>
-                    )}
                   </div>
                 )}
 
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  <CheckoutField label="نام و نام خانوادگی" error={errors.receiver_name?.message}>
-                    <input
-                      {...register("receiver_name")}
-                      className={inputClass(Boolean(errors.receiver_name))}
-                      placeholder="نام گیرنده"
-                    />
-                  </CheckoutField>
+                {shouldShowAddressForm ? (
+                  <div className="mt-5 rounded-2xl border border-[#E3DED5] bg-[#FAFAF8] p-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-base font-black text-[#333230]">ثبت آدرس جدید</p>
+                        <p className="mt-1 text-sm font-bold text-[#77736D]">
+                          این آدرس برای همین سفارش استفاده می‌شود و در صورت انتخاب، ذخیره هم می‌شود.
+                        </p>
+                      </div>
+                      {addresses.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const defaultAddress =
+                              addresses.find((address) => address.is_default) || addresses[0];
+                            if (defaultAddress) applyAddress(defaultAddress);
+                          }}
+                          className="h-10 rounded-xl border border-[#E3DED5] bg-white px-4 text-xs font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
+                        >
+                          بازگشت به آدرس‌های ذخیره‌شده
+                        </button>
+                      )}
+                    </div>
 
-                  <CheckoutField label="شماره تماس" error={errors.phone?.message}>
-                    <input
-                      {...register("phone")}
-                      inputMode="tel"
-                      className={inputClass(Boolean(errors.phone))}
-                      placeholder="0912..."
-                    />
-                  </CheckoutField>
+                    <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                      <CheckoutField label="نام و نام خانوادگی" error={errors.receiver_name?.message}>
+                        <input
+                          {...register("receiver_name")}
+                          className={inputClass(Boolean(errors.receiver_name))}
+                          placeholder="نام گیرنده"
+                        />
+                      </CheckoutField>
 
-                  <CheckoutField label="استان" error={errors.province?.message}>
-                    <input
-                      {...register("province")}
-                      className={inputClass(Boolean(errors.province))}
-                      placeholder="تهران"
-                    />
-                  </CheckoutField>
+                      <CheckoutField label="شماره تماس" error={errors.phone?.message}>
+                        <input
+                          {...register("phone")}
+                          inputMode="tel"
+                          className={inputClass(Boolean(errors.phone))}
+                          placeholder="0912..."
+                        />
+                      </CheckoutField>
 
-                  <CheckoutField label="شهر" error={errors.city?.message}>
-                    <input
-                      {...register("city")}
-                      className={inputClass(Boolean(errors.city))}
-                      placeholder="تهران"
-                    />
-                  </CheckoutField>
+                      <CheckoutField label="استان" error={errors.province?.message}>
+                        <input
+                          {...register("province")}
+                          className={inputClass(Boolean(errors.province))}
+                          placeholder="اصفهان"
+                        />
+                      </CheckoutField>
 
-                  <CheckoutField label="کد پستی" error={errors.postal_code?.message}>
-                    <input
-                      {...register("postal_code")}
-                      inputMode="numeric"
-                      className={inputClass(Boolean(errors.postal_code))}
-                      placeholder="۱۰ رقم"
-                    />
-                  </CheckoutField>
-                </div>
+                      <CheckoutField label="شهر" error={errors.city?.message}>
+                        <input
+                          {...register("city")}
+                          className={inputClass(Boolean(errors.city))}
+                          placeholder="اصفهان"
+                        />
+                      </CheckoutField>
+
+                      <CheckoutField label="کد پستی" error={errors.postal_code?.message}>
+                        <input
+                          {...register("postal_code")}
+                          inputMode="numeric"
+                          className={inputClass(Boolean(errors.postal_code))}
+                          placeholder="۱۰ رقم"
+                        />
+                      </CheckoutField>
+                    </div>
+
+                    <div className="mt-5 grid gap-5">
+                      <CheckoutField label="آدرس کامل" error={errors.address?.message}>
+                        <textarea
+                          {...register("address")}
+                          rows={4}
+                          className={`${inputClass(Boolean(errors.address))} h-auto resize-none py-3 leading-7`}
+                          placeholder="خیابان، کوچه، پلاک، واحد"
+                        />
+                      </CheckoutField>
+
+                      {isAuthenticated && (
+                        <div className="grid gap-4 rounded-xl border border-[#E3DED5] bg-white p-4 sm:grid-cols-[1fr_220px]">
+                          <label className="flex items-center gap-3 text-sm font-black text-[#333230]">
+                            <input type="checkbox" className="h-5 w-5 rounded border-[#D2AD70]" {...register("save_address")} />
+                            این آدرس در پنل ذخیره شود
+                          </label>
+                          {watchedValues.save_address && (
+                            <input
+                              {...register("address_title")}
+                              className={inputClass(false)}
+                              placeholder="عنوان آدرس"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : selectedAddress ? (
+                  <div className="mt-5 rounded-2xl border border-[#E3DED5] bg-[#FAFAF8] p-4">
+                    <p className="text-sm font-black text-[#333230]">سفارش به این آدرس ارسال می‌شود</p>
+                    <p className="mt-2 text-sm font-bold leading-7 text-[#77736D]">
+                      {selectedAddress.receiver_name}، {selectedAddress.phone}
+                    </p>
+                    <p className="mt-1 text-sm font-bold leading-7 text-[#77736D]">
+                      {selectedAddress.province}، {selectedAddress.city}، {selectedAddress.address}
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="mt-5 grid gap-5">
-                  <CheckoutField label="آدرس کامل" error={errors.address?.message}>
-                    <textarea
-                      {...register("address")}
-                      rows={4}
-                      className={`${inputClass(Boolean(errors.address))} h-auto resize-none py-3 leading-7`}
-                      placeholder="خیابان، کوچه، پلاک، واحد"
-                    />
-                  </CheckoutField>
-
                   <CheckoutField label="توضیحات تکمیلی" error={errors.notes?.message}>
                     <textarea
                       {...register("notes")}
@@ -413,27 +617,11 @@ export default function CheckoutPage() {
                       placeholder="اختیاری؛ مثل زمان مناسب تماس یا توضیح تحویل"
                     />
                   </CheckoutField>
-
-                  {isAuthenticated && !selectedAddressId && (
-                    <div className="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:grid-cols-[1fr_220px]">
-                      <label className="flex items-center gap-3 text-sm font-black text-[var(--dark)]">
-                        <input type="checkbox" className="h-5 w-5 rounded border-gray-300" {...register("save_address")} />
-                        این آدرس ذخیره شود
-                      </label>
-                      {watchedValues.save_address && (
-                        <input
-                          {...register("address_title")}
-                          className={inputClass(false)}
-                          placeholder="عنوان آدرس"
-                        />
-                      )}
-                    </div>
-                  )}
                 </div>
               </section>
 
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 className="text-xl font-black text-[var(--dark)]">روش تحویل</h2>
+              <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
+                <h2 className="text-xl font-black text-[#333230]">روش تحویل</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <DeliveryOption
                     label="ارسال به آدرس"
@@ -454,14 +642,14 @@ export default function CheckoutPage() {
                 </div>
 
                 {deliveryMethod === "PICKUP" && (
-                  <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 p-4 text-sm font-bold leading-7 text-[var(--secondary)]">
-                    {PICKUP_ADDRESS}
+                  <div className="mt-4 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4 text-sm font-bold leading-7 text-[#B2894C]">
+                    محل تحویل حضوری: {siteInfo.officeAddress}. {siteInfo.officeVisitNote}
                   </div>
                 )}
               </section>
 
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 className="text-xl font-black text-[var(--dark)]">روش پرداخت</h2>
+              <section className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
+                <h2 className="text-xl font-black text-[#333230]">روش پرداخت</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {paymentMethods.map((method) => (
                     <PaymentMethodOption
@@ -472,14 +660,14 @@ export default function CheckoutPage() {
                     />
                   ))}
                 </div>
-                <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm font-bold leading-7 text-yellow-800">
+                <div className="mt-4 rounded-xl border border-[#D2AD70]/35 bg-[#F6F1E8] p-4 text-sm font-bold leading-7 text-[#77736D]">
                   {IN_PERSON_PAYMENT_INSTRUCTIONS}
                 </div>
               </section>
 
-              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <h2 className="text-xl font-black text-[var(--dark)]">آیتم‌های سفارش</h2>
-                <p className="mt-2 text-sm font-bold text-gray-500">
+              <div className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)]">
+                <h2 className="text-xl font-black text-[#333230]">آیتم‌های سفارش</h2>
+                <p className="mt-2 text-sm font-bold text-[#77736D]">
                   {preview.total_quantity.toLocaleString("fa-IR")} آیتم در سفارش
                 </p>
               </div>
@@ -491,13 +679,14 @@ export default function CheckoutPage() {
           ) : null}
         </div>
 
-        <aside className="h-fit rounded-lg border border-gray-200 bg-white p-5 shadow-sm lg:sticky lg:top-28">
-          <h2 className="text-xl font-black text-[var(--dark)]">خلاصه پرداخت</h2>
+        <aside className="h-fit rounded-2xl border border-[#D8CFC0] bg-white p-5 shadow-[0_20px_55px_-38px_rgba(51,50,48,0.75)] lg:sticky lg:top-28">
+          <p className="text-sm font-black text-[#B2894C]">مرحله نهایی</p>
+          <h2 className="mt-2 text-xl font-black text-[#333230]">خلاصه سفارش</h2>
 
           {isAuthenticated && (
-            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="mt-5 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4">
               <label className="block">
-                <span className="text-sm font-black text-[var(--dark)]">کد پیشنهاد</span>
+                <span className="text-sm font-black text-[#333230]">کد پیشنهاد</span>
                 <div className="mt-2 flex gap-2">
                   <input
                     {...register("coupon_code")}
@@ -508,7 +697,7 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => void applyCoupon()}
                     disabled={!preview || !couponCode.trim()}
-                    className="h-12 shrink-0 rounded-lg bg-[var(--secondary)] px-4 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-12 shrink-0 rounded-xl bg-[#D2AD70] px-4 text-xs font-black text-[#333230] transition hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     اعمال
                   </button>
@@ -525,7 +714,7 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <div className="mt-5 space-y-3 border-b border-gray-100 pb-5 text-sm font-bold text-gray-600">
+          <div className="mt-5 space-y-3 border-b border-[#E3DED5] pb-5 text-sm font-bold text-[#77736D]">
             <SummaryRow label="جمع کالاها" value={`${formatPrice(preview?.subtotal || 0)} تومان`} />
             <SummaryRow
               label={preview?.delivery_method_title || "هزینه ارسال"}
@@ -537,28 +726,28 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-5 flex items-end justify-between gap-4">
-            <span className="text-sm font-bold text-gray-500">مبلغ نهایی</span>
-            <span className="text-2xl font-black text-[var(--dark)]">
+            <span className="text-sm font-bold text-[#77736D]">مبلغ نهایی</span>
+            <span className="text-2xl font-black text-[#333230]">
               {formatPrice(payableTotal)} تومان
             </span>
           </div>
 
-          <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50 p-4 text-sm font-bold leading-7 text-[var(--secondary)]">
-            اطلاعات گیرنده و روش تحویل به صورت موقت ذخیره می‌شود و در مرحله ساخت سفارش استفاده خواهد شد.
+          <div className="mt-5 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] p-4 text-xs font-bold leading-6 text-[#77736D]">
+            پس از ثبت سفارش، شماره سفارش یکتا ساخته می‌شود و وضعیت سفارش از پنل کاربری قابل پیگیری است.
           </div>
 
           <div className="mt-6 grid gap-3">
             <button
               type="button"
-              disabled={!isValid || !preview || isSubmitting || isLoading}
+              disabled={!isValid || !preview || !isPaymentMethodActive || isSubmitting || isLoading || isCompletingOrder}
               onClick={() => void handleSubmit(submitOrder)()}
-              className={`inline-flex h-12 cursor-not-allowed items-center justify-center rounded-full px-6 text-sm font-black ${
-                isValid && preview && !isSubmitting && !isLoading
-                  ? "cursor-pointer bg-[var(--primary)] text-white shadow-lg shadow-pink-900/20 transition hover:opacity-90"
-                  : "bg-gray-200 text-gray-500"
+              className={`inline-flex h-12 cursor-not-allowed items-center justify-center rounded-xl px-6 text-sm font-black ${
+                isValid && preview && isPaymentMethodActive && !isSubmitting && !isLoading && !isCompletingOrder
+                  ? "cursor-pointer bg-[#D2AD70] text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
+                  : "bg-[#E3DED5] text-[#77736D]"
               }`}
             >
-              {isSubmitting ? "در حال ثبت سفارش..." : "ثبت سفارش"}
+              {isSubmitting || isCompletingOrder ? "در حال ثبت سفارش..." : "ثبت سفارش"}
             </button>
             {submitError && (
               <p className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-bold leading-6 text-red-700">
@@ -567,7 +756,7 @@ export default function CheckoutPage() {
             )}
             <Link
               href="/cart"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-gray-200 bg-white px-6 text-sm font-black text-[var(--dark)] transition hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
             >
               ویرایش سبد خرید
             </Link>
@@ -589,7 +778,7 @@ function CheckoutField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-[var(--dark)]">{label}</span>
+      <span className="text-sm font-black text-[#333230]">{label}</span>
       <div className="mt-2">{children}</div>
       {error && <span className="mt-2 block text-xs font-bold text-red-600">{error}</span>}
     </label>
@@ -597,10 +786,10 @@ function CheckoutField({
 }
 
 function inputClass(hasError: boolean) {
-  return `h-12 w-full rounded-lg border bg-white px-4 text-sm font-medium text-[var(--dark)] outline-none transition placeholder:text-gray-400 focus:ring-4 ${
+  return `h-12 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#333230] outline-none transition placeholder:text-gray-400 focus:ring-4 ${
     hasError
       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-      : "border-gray-200 focus:border-[var(--primary)] focus:ring-pink-100"
+      : "border-[#E3DED5] focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
   }`;
 }
 
@@ -623,19 +812,19 @@ function DeliveryOption({
 
   return (
     <label
-      className={`cursor-pointer rounded-lg border p-4 transition ${
+      className={`cursor-pointer rounded-xl border p-4 transition ${
         isSelected
-          ? "border-[var(--primary)] bg-pink-50"
-          : "border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50"
+          ? "border-[#D2AD70] bg-[#F6F1E8]"
+          : "border-[#E3DED5] bg-white hover:border-[#D2AD70] hover:bg-[#FAFAF8]"
       }`}
     >
       <input type="radio" value={value} className="sr-only" {...register} />
       <span className="flex items-start justify-between gap-3">
         <span>
-          <span className="block text-base font-black text-[var(--dark)]">{label}</span>
-          <span className="mt-2 block text-sm leading-6 text-gray-600">{description}</span>
+          <span className="block text-base font-black text-[#333230]">{label}</span>
+          <span className="mt-2 block text-sm font-medium leading-6 text-[#77736D]">{description}</span>
         </span>
-        <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-black text-[var(--secondary)] shadow-sm">
+        <span className="shrink-0 rounded-lg border border-[#E3DED5] bg-white px-3 py-1 text-xs font-black text-[#B2894C] shadow-sm">
           {price}
         </span>
       </span>
@@ -657,12 +846,12 @@ function PaymentMethodOption({
 
   return (
     <label
-      className={`rounded-lg border p-4 transition ${
+      className={`rounded-xl border p-4 transition ${
         isDisabled
-          ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-70"
+          ? "cursor-not-allowed border-[#E3DED5] bg-[#FAFAF8] opacity-70"
           : isSelected
-            ? "cursor-pointer border-[var(--primary)] bg-pink-50"
-            : "cursor-pointer border-gray-200 bg-white hover:border-sky-200 hover:bg-sky-50"
+            ? "cursor-pointer border-[#D2AD70] bg-[#F6F1E8]"
+            : "cursor-pointer border-[#E3DED5] bg-white hover:border-[#D2AD70] hover:bg-[#FAFAF8]"
       }`}
     >
       <input
@@ -674,13 +863,13 @@ function PaymentMethodOption({
       />
       <span className="flex items-start justify-between gap-3">
         <span>
-          <span className="block text-base font-black text-[var(--dark)]">{method.title}</span>
-          <span className="mt-2 block text-sm leading-6 text-gray-600">
+          <span className="block text-base font-black text-[#333230]">{method.title}</span>
+          <span className="mt-2 block text-sm font-medium leading-6 text-[#77736D]">
             {method.description}
           </span>
         </span>
         {!method.is_active && (
-          <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-black text-gray-500 shadow-sm">
+          <span className="shrink-0 rounded-lg border border-[#E3DED5] bg-white px-3 py-1 text-xs font-black text-[#77736D] shadow-sm">
             به‌زودی
           </span>
         )}
@@ -691,16 +880,16 @@ function PaymentMethodOption({
 
 function CheckoutItem({ item }: { item: CheckoutPreview["items"][number] }) {
   return (
-    <article className="grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-[120px_1fr] sm:items-center">
+    <article className="grid gap-4 rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] sm:grid-cols-[120px_1fr] sm:items-center">
       <Link
         href={`/products/${item.slug}`}
-        className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gradient-to-br from-sky-50 via-white to-pink-50"
+        className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[#E3DED5] bg-[#F6F1E8]"
       >
         {item.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.image_url} alt={item.title} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg font-black text-[var(--secondary)]">
+          <div className="flex h-full w-full items-center justify-center text-lg font-black text-[#B2894C]">
             چاپ
           </div>
         )}
@@ -709,12 +898,12 @@ function CheckoutItem({ item }: { item: CheckoutPreview["items"][number] }) {
       <div className="min-w-0">
         <Link
           href={`/products/${item.slug}`}
-          className="line-clamp-1 text-lg font-black text-[var(--dark)] transition hover:text-[var(--primary)]"
+          className="line-clamp-1 text-lg font-black text-[#333230] transition hover:text-[#B2894C]"
         >
           {item.title}
         </Link>
 
-        <div className="mt-4 grid gap-3 text-sm font-bold text-gray-600 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 text-sm font-bold text-[#77736D] sm:grid-cols-3">
           <SummaryPill label="تعداد" value={item.quantity.toLocaleString("fa-IR")} />
           <SummaryPill label="قیمت واحد" value={`${formatPrice(item.unit_price)} تومان`} />
           <SummaryPill label="جمع ردیف" value={`${formatPrice(item.line_total)} تومان`} />
@@ -728,16 +917,16 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
       <span>{label}</span>
-      <span>{value}</span>
+      <span className="text-[#333230]">{value}</span>
     </div>
   );
 }
 
 function SummaryPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-gray-50 px-3 py-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 font-black text-[var(--dark)]">{value}</p>
+    <div className="rounded-xl border border-[#E3DED5] bg-[#FAFAF8] px-3 py-3">
+      <p className="text-xs text-[#77736D]">{label}</p>
+      <p className="mt-1 font-black text-[#333230]">{value}</p>
     </div>
   );
 }
@@ -748,15 +937,15 @@ function CheckoutSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}
-          className="grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-[120px_1fr]"
+          className="grid gap-4 rounded-2xl border border-[#E3DED5] bg-white p-4 sm:grid-cols-[120px_1fr]"
         >
-          <div className="aspect-[4/3] animate-pulse rounded-lg bg-gray-100" />
+          <div className="aspect-[4/3] animate-pulse rounded-xl bg-[#E3DED5]" />
           <div>
-            <div className="h-6 w-56 max-w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-6 w-56 max-w-full animate-pulse rounded bg-[#E3DED5]" />
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="h-16 animate-pulse rounded-lg bg-gray-100" />
-              <div className="h-16 animate-pulse rounded-lg bg-gray-100" />
-              <div className="h-16 animate-pulse rounded-lg bg-gray-100" />
+              <div className="h-16 animate-pulse rounded-xl bg-[#E3DED5]" />
+              <div className="h-16 animate-pulse rounded-xl bg-[#E3DED5]" />
+              <div className="h-16 animate-pulse rounded-xl bg-[#E3DED5]" />
             </div>
           </div>
         </div>

@@ -22,7 +22,13 @@ export type CheckoutPreview = {
   total_quantity: number;
 };
 
+export type CheckoutCartItemPayload = {
+  product_id: number;
+  quantity: number;
+};
+
 export type CreateOrderPayload = {
+  idempotency_key?: string;
   address_id?: number | null;
   receiver_name: string;
   phone: string;
@@ -35,6 +41,7 @@ export type CreateOrderPayload = {
   address_title?: string;
   coupon_code?: string;
   notes?: string;
+  items?: CheckoutCartItemPayload[];
 };
 
 export type OrderItem = {
@@ -78,6 +85,10 @@ export type Order = {
     status: string;
     status_label: string;
     provider: string;
+    provider_reference: string | null;
+    tracking_code: string;
+    receipt_number: string;
+    failure_reason: string;
     paid_at: string | null;
     created_at: string;
   } | null;
@@ -97,9 +108,13 @@ export type OrderStatusHistory = {
   created_at: string;
 };
 
-export async function getCheckoutPreview(deliveryMethod: CheckoutDeliveryMethod = "SHIPPING") {
+export async function getCheckoutPreview(
+  deliveryMethod: CheckoutDeliveryMethod = "SHIPPING",
+  items: CheckoutCartItemPayload[] = []
+) {
   const response = await api.post<CheckoutPreview>("/checkout/preview/", {
     delivery_method: deliveryMethod,
+    items,
   });
 
   return response.data;

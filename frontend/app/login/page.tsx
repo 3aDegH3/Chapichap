@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +9,6 @@ import { z } from "zod";
 import { useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Alert from "@/components/ui/Alert";
 import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
@@ -72,50 +72,66 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] bg-gray-50 px-4 py-12">
-      <div className="mx-auto grid max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-xl md:grid-cols-2">
-        <section className="relative hidden bg-[var(--dark)] p-10 text-white md:block">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -right-16 top-16 h-56 w-56 rounded-full bg-[var(--primary)] opacity-30 blur-3xl" />
-            <div className="absolute -left-16 bottom-16 h-56 w-56 rounded-full bg-[var(--secondary)] opacity-30 blur-3xl" />
-          </div>
-
-          <div className="relative flex h-full flex-col justify-between">
+    <main className="bg-[#F2EEE6] px-4 py-10 sm:py-14">
+      <div className="mx-auto grid max-w-6xl overflow-hidden rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8] shadow-[0_24px_70px_-42px_rgba(51,50,48,0.65)] md:grid-cols-[0.95fr_1.05fr]">
+        <section className="relative hidden border-l border-[#E3DED5] bg-[#F6F1E8] p-8 md:block lg:p-10">
+          <div className="flex h-full min-h-[520px] flex-col justify-between">
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary)] text-xl font-black">
-                چ
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white shadow-[0_16px_34px_-24px_rgba(51,50,48,0.75)]">
+                <Image
+                  src="/brand/logo.png"
+                  alt="لوگوی چاپی چاپ"
+                  width={160}
+                  height={160}
+                  priority
+                  className="h-full w-full object-contain"
+                />
               </div>
 
-              <h1 className="mt-8 text-3xl font-black leading-snug">
-                دوباره خوش آمدی
+              <p className="mt-8 text-sm font-black text-[#B2894C]">
+                ورود امن به چاپی چاپ
+              </p>
+
+              <h1 className="mt-3 text-3xl font-black leading-snug text-[#333230]">
+                سفارش‌ها و طرح‌هایت همین‌جا منتظرت هستند
               </h1>
 
-              <p className="mt-4 max-w-sm leading-8 text-white/70">
+              <p className="mt-4 max-w-sm text-sm font-medium leading-8 text-[#77736D]">
                 وارد حساب شو تا سفارش‌ها، درخواست‌های طراحی و مسیر خریدت را
                 ادامه بدهی.
               </p>
             </div>
 
-            <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
-              <p className="text-sm leading-7 text-white/75">
-                «هدیه خاص از جایی شروع می‌شود که طرح تو وارد ماجرا می‌شود.»
-              </p>
+            <div className="grid gap-3">
+              {[
+                "پیگیری سفارش‌های چاپ",
+                "دیدن درخواست‌های طراحی",
+                "ادامه خریدهای نیمه‌کاره",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 rounded-xl border border-[#E3DED5] bg-white px-4 py-3 text-sm font-black text-[#333230]"
+                >
+                  <span className="h-2 w-2 rounded-full bg-[#D2AD70]" />
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="p-6 sm:p-10">
+        <section className="p-6 sm:p-10 lg:p-12">
           <div className="mx-auto max-w-md">
-            <p className="text-sm font-black text-[var(--primary)]">
+            <p className="text-sm font-black text-[#B2894C]">
               ورود به حساب
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-[var(--dark)]">
-              وارد حساب کاربری شوید
+            <h2 className="mt-3 text-3xl font-black leading-snug text-[#333230]">
+              خوش برگشتی
             </h2>
 
-            <p className="mt-3 leading-7 text-gray-600">
-              با ایمیل یا شماره موبایل وارد شوید.
+            <p className="mt-3 text-sm font-medium leading-7 text-[#77736D]">
+              با ایمیل یا شماره موبایل وارد شو و سفارش چاپت را ادامه بده.
             </p>
 
             {serverError && (
@@ -130,6 +146,7 @@ export default function LoginPage() {
                 label="ایمیل یا شماره موبایل"
                 placeholder="example@email.com یا 0912..."
                 error={errors.identifier?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("identifier")}
               />
 
@@ -139,26 +156,26 @@ export default function LoginPage() {
                 type="password"
                 placeholder="رمز عبور"
                 error={errors.password?.message}
+                className="rounded-xl border-[#E3DED5] bg-white focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
                 {...register("password")}
               />
 
-              <Button
+              <button
                 type="submit"
-                className="w-full"
-                size="lg"
-                isLoading={isSubmitting}
+                disabled={isSubmitting}
+                className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-[#D2AD70] px-7 text-base font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                ورود
-              </Button>
+                {isSubmitting ? "در حال ورود..." : "ورود"}
+              </button>
             </form>
 
-            <div className="mt-6 flex flex-col items-center gap-3 text-sm font-bold text-gray-600 sm:flex-row sm:justify-between">
-              <Link href="/forgot-password" className="text-[var(--secondary)] hover:underline">
+            <div className="mt-6 flex flex-col items-center gap-3 text-sm font-bold text-[#77736D] sm:flex-row sm:justify-between">
+              <Link href="/forgot-password" className="text-[#B2894C] hover:text-[#333230]">
                 فراموشی رمز عبور
               </Link>
               <span>
                 حساب نداری؟{" "}
-                <Link href="/register" className="text-[var(--primary)] hover:underline">
+                <Link href="/register" className="text-[#B2894C] hover:text-[#333230]">
                   ثبت‌نام کن
                 </Link>
               </span>

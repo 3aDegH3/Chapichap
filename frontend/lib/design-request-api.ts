@@ -33,6 +33,8 @@ export type DesignRequest = {
   uploaded_file: UploadedFileResponse | null;
   status: string;
   status_label: string;
+  admin_response: string;
+  admin_response_at: string | null;
   created_at: string;
   updated_at: string;
 };

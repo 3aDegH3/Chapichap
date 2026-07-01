@@ -25,6 +25,15 @@ def parse_positive_int(value, default=1):
         return default
 
 
+def validate_cart_quantity(product, quantity):
+    if not product.is_available:
+        raise ValidationError(f"محصول «{product.title}» در حال حاضر موجود نیست.")
+    if product.unlimited_stock:
+        return
+    if quantity > product.stock_quantity:
+        raise ValidationError(f"موجودی محصول «{product.title}» فقط {product.stock_quantity} عدد است.")
+
+
 def get_or_create_cart(request):
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -34,6 +43,48 @@ def get_or_create_cart(request):
         request.session.create()
 
     cart, _ = Cart.objects.get_or_create(session_key=request.session.session_key)
+    return cart
+
+
+def parse_cart_payload_items(raw_items):
+    parsed_items = {}
+
+    for item in raw_items or []:
+        try:
+            product_id = int(item.get("product_id"))
+        except (AttributeError, TypeError, ValueError):
+            continue
+
+        quantity = parse_positive_int(item.get("quantity", 1))
+        parsed_items[product_id] = parsed_items.get(product_id, 0) + quantity
+
+    return parsed_items
+
+
+def sync_cart_from_payload(cart, raw_items):
+    parsed_items = parse_cart_payload_items(raw_items)
+    if not parsed_items:
+        return cart
+
+    products = {
+        product.id: product
+        for product in Product.objects.filter(id__in=parsed_items.keys(), is_active=True)
+    }
+
+    cart.items.exclude(product_id__in=products.keys()).delete()
+
+    for product_id, quantity in parsed_items.items():
+        product = products.get(product_id)
+        if not product:
+            continue
+        validate_cart_quantity(product, quantity)
+
+        CartItem.objects.update_or_create(
+            cart=cart,
+            product=product,
+            defaults={"quantity": quantity},
+        )
+
     return cart
 
 
@@ -52,6 +103,10 @@ class CartAddAPIView(APIView):
         product_id = request.data.get("product_id")
         quantity = parse_positive_int(request.data.get("quantity", 1))
         product = get_object_or_404(Product, id=product_id, is_active=True)
+        try:
+            validate_cart_quantity(product, quantity)
+        except ValidationError as error:
+            return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
         cart = get_or_create_cart(request)
 
         item, created = CartItem.objects.get_or_create(
@@ -61,6 +116,10 @@ class CartAddAPIView(APIView):
         )
 
         if not created:
+            try:
+                validate_cart_quantity(product, item.quantity + quantity)
+            except ValidationError as error:
+                return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
             item.quantity += quantity
             item.save(update_fields=["quantity", "updated_at"])
 
@@ -77,11 +136,15 @@ class CartUpdateAPIView(APIView):
         except (TypeError, ValueError):
             quantity = 1
         cart = get_or_create_cart(request)
-        item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        item = get_object_or_404(CartItem.objects.select_related("product"), cart=cart, product_id=product_id)
 
         if quantity <= 0:
             item.delete()
         else:
+            try:
+                validate_cart_quantity(item.product, quantity)
+            except ValidationError as error:
+                return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
             item.quantity = quantity
             item.save(update_fields=["quantity", "updated_at"])
 
@@ -107,6 +170,7 @@ class CheckoutPreviewAPIView(APIView):
         cart = get_or_create_cart(request)
 
         try:
+            sync_cart_from_payload(cart, serializer.validated_data.get("items"))
             preview = calculate_checkout_preview(
                 cart,
                 delivery_method=serializer.validated_data["delivery_method"],
@@ -141,9 +205,30 @@ class OrderListCreateAPIView(APIView):
     def post(self, request):
         serializer = OrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        idempotency_key = (serializer.validated_data.get("idempotency_key") or "").strip()
+
+        if idempotency_key:
+            existing_order_queryset = Order.objects.filter(idempotency_key=idempotency_key)
+            if request.user.is_authenticated:
+                existing_order_queryset = existing_order_queryset.filter(user=request.user)
+            elif request.session.session_key:
+                existing_order_queryset = existing_order_queryset.filter(
+                    session_key=request.session.session_key
+                )
+            else:
+                existing_order_queryset = existing_order_queryset.none()
+
+            existing_order = existing_order_queryset.first()
+            if existing_order:
+                return Response(
+                    OrderSerializer(existing_order, context={"request": request}).data,
+                    status=status.HTTP_200_OK,
+                )
+
         cart = get_or_create_cart(request)
 
         try:
+            sync_cart_from_payload(cart, serializer.validated_data.get("items"))
             order = create_order_from_cart(
                 cart,
                 serializer.validated_data,
