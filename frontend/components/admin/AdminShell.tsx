@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin", label: "داشبورد", shortLabel: "دا", permission: "dashboard" },
   { href: "/admin/orders", label: "سفارش‌ها", shortLabel: "سف", permission: "orders" },
   { href: "/admin/products", label: "محصولات", shortLabel: "مح", permission: "products" },
+  { href: "/admin/reviews", label: "نظرات", shortLabel: "نظ", permission: "reviews" },
   { href: "/admin/categories", label: "دسته‌بندی‌ها", shortLabel: "دس", permission: "categories" },
   { href: "/admin/design-requests", label: "درخواست‌های طراحی", shortLabel: "طر", permission: "design_requests" },
   { href: "/admin/contact-messages", label: "پیام‌های تماس", shortLabel: "پی", permission: "contact_messages" },

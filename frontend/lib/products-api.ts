@@ -37,6 +37,8 @@ export type Product = {
   image: string | null;
   image_url: string | null;
   is_active: boolean;
+  average_rating: string;
+  approved_reviews_count: number;
   created_at: string;
 };
 

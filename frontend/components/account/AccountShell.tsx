@@ -15,6 +15,7 @@ const navItems = [
   { href: "/account/addresses", label: "آدرس‌ها" },
   { href: "/account/orders", label: "سفارش‌ها" },
   { href: "/account/design-requests", label: "درخواست‌های طراحی" },
+  { href: "/account/reviews", label: "نظرات من" },
   { href: "/account/offers", label: "پیشنهادها" },
   { href: "/account/tickets", label: "پشتیبانی" },
   { href: "/account/notifications", label: "اعلان‌ها" },

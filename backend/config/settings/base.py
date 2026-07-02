@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "apps.payments",
     "apps.content",
     "apps.admin_panel",
+    "apps.reviews.apps.ReviewsConfig",
 ]
 
 
@@ -206,6 +207,7 @@ REST_FRAMEWORK = {
 
     "DEFAULT_THROTTLE_RATES": {
         "contact_messages": "5/hour",
+        "review_create": "5/hour",
     },
 }
 
