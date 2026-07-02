@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 
 import ProductCard from "@/components/products/ProductCard";
 import ProductGallery from "@/components/products/ProductGallery";
+import RatingStars from "@/components/reviews/RatingStars";
+import ReviewsSection from "@/components/reviews/ReviewsSection";
 import { useCart } from "@/contexts/CartContext";
 import {
   getProduct,
@@ -79,9 +81,32 @@ export default function ProductDetailClient() {
     product.product_type_label ? { label: "نوع محصول", value: product.product_type_label } : null,
     product.gift_usage_label ? { label: "کاربرد هدیه", value: product.gift_usage_label } : null,
   ].filter((item): item is { label: string; value: string } => Boolean(item));
+  const structuredData = product.approved_reviews_count > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.title,
+        description: product.short_description || product.description || undefined,
+        image: product.image_url || undefined,
+        sku: String(product.id),
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: Number(product.average_rating),
+          reviewCount: product.approved_reviews_count,
+          bestRating: 5,
+          worstRating: 1,
+        },
+      }
+    : null;
 
   return (
     <main className="bg-[#FAFAF8] pb-24 md:pb-0">
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+        />
+      )}
       <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#77736D]">
@@ -134,6 +159,15 @@ export default function ProductDetailClient() {
           <h1 className="mt-5 text-3xl font-black leading-tight text-[#333230] sm:text-4xl">
             {product.title}
           </h1>
+
+          <a href="#reviews" className="mt-3 inline-flex items-center gap-3 rounded-xl transition hover:opacity-75">
+            <RatingStars value={Number(product.average_rating)} readonly size="sm" label={`امتیاز ${product.title}`} />
+            <span className="text-sm font-black text-[#6F6A63]">
+              {product.approved_reviews_count > 0
+                ? `${Number(product.average_rating).toLocaleString("fa-IR", { maximumFractionDigits: 1 })} از ۵ · ${product.approved_reviews_count.toLocaleString("fa-IR")} نظر`
+                : "هنوز نظری ثبت نشده است"}
+            </span>
+          </a>
 
           <p className="mt-5 text-base leading-8 text-[#77736D]">
             {product.short_description ||
@@ -257,6 +291,8 @@ export default function ProductDetailClient() {
           </div>
         </section>
       )}
+
+      <ReviewsSection productId={product.id} productSlug={product.slug} productTitle={product.title} />
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E3DED5] bg-white/95 px-4 py-3 shadow-[0_-10px_30px_-18px_rgba(0,0,0,0.28)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">

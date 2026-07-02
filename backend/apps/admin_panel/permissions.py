@@ -13,6 +13,7 @@ ADMIN_PERMISSION_CUSTOMER_FILES = "customer_files"
 ADMIN_PERMISSION_CUSTOMERS = "customers"
 ADMIN_PERMISSION_ACTIVITY_LOGS = "activity_logs"
 ADMIN_PERMISSION_SETTINGS = "settings"
+ADMIN_PERMISSION_REVIEWS = "reviews"
 
 SUPER_ADMIN_PERMISSIONS = {
     ADMIN_PERMISSION_DASHBOARD,
@@ -25,6 +26,7 @@ SUPER_ADMIN_PERMISSIONS = {
     ADMIN_PERMISSION_CUSTOMERS,
     ADMIN_PERMISSION_ACTIVITY_LOGS,
     ADMIN_PERMISSION_SETTINGS,
+    ADMIN_PERMISSION_REVIEWS,
 }
 
 ROLE_PERMISSIONS = {
@@ -39,6 +41,7 @@ ROLE_PERMISSIONS = {
         ADMIN_PERMISSION_DASHBOARD,
         ADMIN_PERMISSION_PRODUCTS,
         ADMIN_PERMISSION_CATEGORIES,
+        ADMIN_PERMISSION_REVIEWS,
     },
     User.AdminRole.SUPPORT: {
         ADMIN_PERMISSION_DASHBOARD,
@@ -46,6 +49,7 @@ ROLE_PERMISSIONS = {
         ADMIN_PERMISSION_DESIGN_REQUESTS,
         ADMIN_PERMISSION_CONTACT_MESSAGES,
         ADMIN_PERMISSION_CUSTOMER_FILES,
+        ADMIN_PERMISSION_REVIEWS,
     },
 }
 
@@ -136,3 +140,10 @@ class CanViewActivityLogs(BasePermission):
 
     def has_permission(self, request, view):
         return user_has_admin_permission(request.user, ADMIN_PERMISSION_ACTIVITY_LOGS)
+
+
+class CanManageReviews(BasePermission):
+    message = "دسترسی مدیریت نظرات برای این نقش مجاز نیست."
+
+    def has_permission(self, request, view):
+        return user_has_admin_permission(request.user, ADMIN_PERMISSION_REVIEWS)

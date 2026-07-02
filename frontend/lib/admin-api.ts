@@ -24,7 +24,8 @@ export type AdminPermission =
   | "customer_files"
   | "customers"
   | "activity_logs"
-  | "settings";
+  | "settings"
+  | "reviews";
 
 export type AdminMeResponse = {
   success: boolean;
@@ -387,6 +388,8 @@ export type AdminProduct = {
   low_stock_threshold: number;
   is_available: boolean;
   is_low_stock: boolean;
+  average_rating: string;
+  approved_reviews_count: number;
   image: string | null;
   image_url: string | null;
   gallery_images: AdminProductImage[];

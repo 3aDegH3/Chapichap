@@ -1117,10 +1117,12 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "image_url",
             "gallery_images",
             "is_active",
+            "average_rating",
+            "approved_reviews_count",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "category_detail", "product_type_label", "gift_usage_label", "is_available", "effective_price", "has_active_discount", "is_low_stock", "image_url", "gallery_images", "created_at", "updated_at"]
+        read_only_fields = ["id", "category_detail", "product_type_label", "gift_usage_label", "is_available", "effective_price", "has_active_discount", "is_low_stock", "image_url", "gallery_images", "average_rating", "approved_reviews_count", "created_at", "updated_at"]
         extra_kwargs = {
             "category": {"required": False, "allow_null": True},
             "slug": {"required": False, "allow_blank": True},

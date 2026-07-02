@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/v1/categories/", CategoryListAPIView.as_view(), name="category-list"),
     path("api/v1/search/", ProductSearchAPIView.as_view(), name="product-search"),
     path("api/v1/portfolio/", include("apps.portfolio.urls")),
+    path("api/v1/", include("apps.reviews.urls")),
 
 
 
