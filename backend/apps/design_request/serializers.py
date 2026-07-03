@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.accounts.services import notify_design_request_received
 from apps.core.file_security import make_secure_customer_filename, normalize_customer_content_type
+from apps.products.models import Product
 from apps.products.serializers import ProductSerializer
 
 from .models import DesignRequest, UploadedFile
@@ -49,6 +50,7 @@ class UploadedFileSerializer(serializers.ModelSerializer):
             content_type=normalize_customer_content_type(getattr(file, "content_type", ""), original_name),
             size=file.size,
             uploaded_by=user,
+            session_key=(request.session.session_key or "") if request else "",
         )
 
 
@@ -62,7 +64,13 @@ class DesignRequestSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
     product = ProductSerializer(read_only=True)
-    product_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(is_active=True),
+        source="product",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     order_type_label = serializers.CharField(source="get_order_type_display", read_only=True)
 
@@ -107,3 +115,22 @@ class DesignRequestSerializer(serializers.ModelSerializer):
         design_request = super().create(validated_data)
         notify_design_request_received(design_request)
         return design_request
+
+    def validate_uploaded_file_id(self, uploaded_file):
+        if uploaded_file is None:
+            return None
+
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError("مالکیت فایل قابل تأیید نیست.")
+
+        is_owner = request.user.is_authenticated and uploaded_file.uploaded_by_id == request.user.id
+        is_same_session = bool(
+            request.session.session_key
+            and uploaded_file.session_key == request.session.session_key
+        )
+
+        if not is_owner and not is_same_session:
+            raise serializers.ValidationError("فایل انتخاب‌شده متعلق به این نشست نیست.")
+
+        return uploaded_file

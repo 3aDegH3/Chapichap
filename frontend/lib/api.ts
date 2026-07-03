@@ -1,5 +1,10 @@
-import axios from "axios";
-import { getAccessToken } from "./auth";
+import axios, { type InternalAxiosRequestConfig } from "axios";
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+} from "./auth";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
@@ -11,6 +16,31 @@ export const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retryAfterRefresh?: boolean;
+};
+
+let refreshRequest: Promise<{ access: string; refresh: string }> | null = null;
+
+async function refreshAccessToken() {
+  const refresh = getRefreshToken();
+  if (!refresh) throw new Error("Refresh token is unavailable.");
+
+  const response = await axios.post<{ access: string; refresh?: string }>(
+    `${API_BASE_URL}/auth/token/refresh/`,
+    { refresh },
+    { withCredentials: true },
+  );
+
+  const tokens = {
+    access: response.data.access,
+    refresh: response.data.refresh || refresh,
+  };
+
+  setTokens(tokens);
+  return tokens;
+}
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -29,6 +59,38 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: unknown) => {
+    if (!axios.isAxiosError(error)) {
+      return Promise.reject(error);
+    }
+
+    const requestConfig = error.config as RetryableRequestConfig | undefined;
+    const isUnauthorized = error.response?.status === 401;
+    const isRefreshRequest = requestConfig?.url?.includes("/auth/token/refresh/");
+
+    if (!requestConfig || !isUnauthorized || isRefreshRequest || requestConfig._retryAfterRefresh) {
+      return Promise.reject(error);
+    }
+
+    requestConfig._retryAfterRefresh = true;
+
+    try {
+      refreshRequest ??= refreshAccessToken().finally(() => {
+        refreshRequest = null;
+      });
+
+      const tokens = await refreshRequest;
+      requestConfig.headers.Authorization = `Bearer ${tokens.access}`;
+      return api(requestConfig);
+    } catch (refreshError) {
+      clearTokens();
+      return Promise.reject(refreshError);
+    }
+  },
+);
 
 export function getApiErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {

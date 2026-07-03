@@ -1,255 +1,257 @@
-  "use client";
+"use client";
 
-  import Link from "next/link";
+import { useMemo } from "react";
 
-  import { useAuth } from "@/contexts/AuthContext";
-  import { useCart } from "@/contexts/CartContext";
-  import { getProductStockLimit, isProductAvailable } from "@/lib/products-api";
+import CartEmptyState from "@/components/cart/CartEmptyState";
+import CartHero from "@/components/cart/CartHero";
+import CartItemCard from "@/components/cart/CartItemCard";
+import CartSkeleton from "@/components/cart/CartSkeleton";
+import CartSummary from "@/components/cart/CartSummary";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import {
+  getProductStockLimit,
+  isProductAvailable,
+} from "@/lib/products-api";
 
-  function formatPrice(price: number | string) {
-    return new Intl.NumberFormat("fa-IR").format(Number(price) || 0);
+export default function CartPage() {
+  const {
+    items,
+    totalItems,
+    totalPrice,
+    isReady,
+    isSyncing,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCart();
+
+  const { isAuthenticated } = useAuth();
+
+  const checkoutHref = isAuthenticated
+    ? "/checkout"
+    : "/login?next=/checkout";
+
+  const itemsWithIssues = useMemo(
+    () =>
+      items.filter((item) => {
+        const stockLimit = getProductStockLimit(item.product);
+
+        return (
+          !isProductAvailable(item.product) ||
+          (stockLimit !== null &&
+            item.quantity > stockLimit)
+        );
+      }),
+    [items],
+  );
+
+  const canCheckout =
+    items.length > 0 && itemsWithIssues.length === 0;
+
+  function handleRemove(productId: number, title: string) {
+    const accepted = window.confirm(
+      `«${title}» از سبد خرید حذف شود؟`,
+    );
+
+    if (accepted) {
+      removeItem(productId);
+    }
   }
 
-  export default function CartPage() {
-    const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useCart();
-    const { isAuthenticated } = useAuth();
-    const checkoutHref = isAuthenticated ? "/checkout" : "/login?next=/checkout";
-    const itemsWithIssues = items.filter((item) => {
-      const stockLimit = getProductStockLimit(item.product);
-      return !isProductAvailable(item.product) || (stockLimit !== null && item.quantity > stockLimit);
-    });
-    const canCheckout = items.length > 0 && itemsWithIssues.length === 0;
+  function handleClearCart() {
+    const accepted = window.confirm(
+      "همه محصولات از سبد خرید حذف شوند؟",
+    );
 
-    return (
-      <main className="bg-[#FAFAF8]">
-        <section className="border-b border-[#E3DED5] bg-[#F2EEE6]">
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <p className="text-sm font-black text-[#B2894C]">سبد خرید</p>
-            <h1 className="mt-3 text-3xl font-black leading-snug text-[#333230] sm:text-5xl">
-              سفارش‌های انتخاب‌شده
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm font-medium leading-8 text-[#77736D]">
-              تعداد محصول‌ها را تنظیم کن و وقتی همه چیز آماده بود، سفارش چاپ و هدیه را نهایی کن.
-            </p>
-          </div>
-        </section>
+    if (accepted) {
+      clearCart();
+    }
+  }
 
-        <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-          <div className="min-w-0">
-            {items.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#D2AD70]/70 bg-[#F6F1E8] px-6 py-16 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#D2AD70]/60 bg-white text-2xl font-black text-[#B2894C]">
-                  ۰
-                </div>
-                <h2 className="mt-6 text-xl font-black text-[#333230]">سبد خرید خالی است</h2>
-                <p className="mx-auto mt-3 max-w-md text-sm font-medium leading-7 text-[#77736D]">
-                  از صفحه محصولات، آیتم مورد نظرت را انتخاب کن و سفارش را شروع کن.
-                </p>
-                <Link
-                  href="/products"
-                  className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
-                >
-                  مشاهده محصولات
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex flex-col gap-4 rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-34px_rgba(51,50,48,0.6)] sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-black text-[#333230]">
-                      {totalItems.toLocaleString("fa-IR")} آیتم در سبد خرید
+  return (
+    <main className="cart-page-shell min-h-screen overflow-hidden bg-[#FBFAF7] text-[#302B27]">
+      <CartHero
+        totalItems={totalItems}
+        totalPrice={totalPrice}
+        hasItems={items.length > 0}
+      />
+
+      <section className="relative mx-auto grid w-full max-w-[1760px] gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:px-12 lg:py-16">
+        <div className="min-w-0">
+          {!isReady ? (
+            <CartSkeleton />
+          ) : items.length === 0 ? (
+            <CartEmptyState />
+          ) : (
+            <div className="space-y-5">
+              <div className="cart-enter flex flex-col gap-5 rounded-[28px] border border-[#E2D9CD] bg-white p-5 shadow-[0_24px_60px_-46px_rgba(48,40,32,0.52)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-[24px] font-black text-[#302B27]">
+                      {totalItems.toLocaleString("fa-IR")} آیتم
+                      در سبد خرید
                     </p>
-                    <p className="mt-1 text-sm font-medium text-[#77736D]">تعداد را تغییر بده؛ جمع کل فوری به‌روزرسانی می‌شود.</p>
+
+                    {isSyncing && (
+                      <span className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-[#D2AD70]/40 bg-[#F6F1E8] px-4 text-[20px] font-black text-[#966429]">
+                        <span className="cart-sync-dot h-2.5 w-2.5 rounded-full bg-[#B2894C]" />
+                        در حال ذخیره
+                      </span>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={clearCart}
-                    className="h-10 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] px-4 text-sm font-black text-[#77736D] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  >
-                    خالی کردن
-                  </button>
+
+                  <p className="mt-2 text-[20px] font-medium leading-[1.9] text-[#756E66]">
+                    تعداد محصولات را تنظیم کن؛ مبلغ سفارش
+                    بلافاصله محاسبه می‌شود.
+                  </p>
                 </div>
 
-                {items.map((item) => {
-                  const unitPrice = item.product.effective_price || item.product.price;
-                  const lineTotal = Number(unitPrice) * item.quantity;
-                  const stockLimit = getProductStockLimit(item.product);
-                  const isAvailable = isProductAvailable(item.product);
-                  const hasQuantityIssue = stockLimit !== null && item.quantity > stockLimit;
-                  const isIncreaseDisabled =
-                    !isAvailable || (stockLimit !== null && item.quantity >= stockLimit);
-
-                  return (
-                    <article
-                      key={item.product.id}
-                      className="grid gap-4 rounded-2xl border border-[#E3DED5] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] sm:grid-cols-[128px_1fr] sm:items-center"
-                    >
-                      <Link
-                        href={`/products/${item.product.slug}`}
-                        className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[#E3DED5] bg-[#F6F1E8]"
-                      >
-                        {item.product.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.product.image_url}
-                            alt={item.product.title}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-lg font-black text-[#B2894C]">
-                            چاپ
-                          </div>
-                        )}
-                      </Link>
-
-                      <div className="min-w-0">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0">
-                            <Link
-                              href={`/products/${item.product.slug}`}
-                              className="line-clamp-1 text-lg font-black text-[#333230] transition hover:text-[#B2894C]"
-                            >
-                              {item.product.title}
-                            </Link>
-                            <p className="mt-1 text-sm font-bold text-[#77736D]">
-                              قیمت واحد: {formatPrice(unitPrice)} تومان
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {item.product.product_type_label && (
-                                <span className="rounded-lg bg-[#F6F1E8] px-2.5 py-1 text-xs font-black text-[#B2894C]">
-                                  {item.product.product_type_label}
-                                </span>
-                              )}
-                              <span
-                                className={[
-                                  "rounded-lg px-2.5 py-1 text-xs font-black",
-                                  isAvailable && !hasQuantityIssue
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : "bg-red-50 text-red-600",
-                                ].join(" ")}
-                              >
-                                {isAvailable
-                                  ? stockLimit === null
-                                    ? "موجود"
-                                    : `موجودی ${stockLimit.toLocaleString("fa-IR")}`
-                                  : "ناموجود"}
-                              </span>
-                            </div>
-                            {hasQuantityIssue && (
-                              <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold leading-6 text-red-600">
-                                تعداد انتخاب‌شده بیشتر از موجودی فعلی است.
-                              </p>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.product.id)}
-                            className="h-10 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100"
-                          >
-                            حذف
-                          </button>
-                        </div>
-
-                        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="inline-grid h-11 w-36 grid-cols-3 overflow-hidden rounded-xl border border-[#E3DED5] bg-[#FAFAF8]">
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              disabled={isIncreaseDisabled}
-                              className="text-lg font-black text-[#B2894C] transition hover:bg-[#F6F1E8] disabled:cursor-not-allowed disabled:text-[#C9C0B2] disabled:hover:bg-transparent"
-                              aria-label="افزایش تعداد"
-                            >
-                              +
-                            </button>
-                            <input
-                              value={item.quantity}
-                              inputMode="numeric"
-                              onChange={(event) =>
-                                updateQuantity(item.product.id, Number(event.target.value))
-                              }
-                              disabled={!isAvailable}
-                              className="min-w-0 border-x border-[#E3DED5] bg-white text-center text-sm font-black text-[#333230] outline-none"
-                              aria-label="تعداد"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="text-lg font-black text-[#77736D] transition hover:bg-[#F6F1E8]"
-                              aria-label="کاهش تعداد"
-                            >
-                              -
-                            </button>
-                          </div>
-
-                          <p className="text-lg font-black text-[#333230]">
-                            {formatPrice(lineTotal)} تومان
-                          </p>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <aside className="h-fit rounded-2xl border border-[#D8CFC0] bg-white p-5 shadow-[0_20px_55px_-38px_rgba(51,50,48,0.75)] lg:sticky lg:top-28">
-            <p className="text-sm font-black text-[#B2894C]">مرحله بعد</p>
-            <h2 className="mt-2 text-xl font-black text-[#333230]">خلاصه سفارش</h2>
-            <div className="mt-5 space-y-3 border-b border-[#E3DED5] pb-5 text-sm font-bold text-[#77736D]">
-              <div className="flex justify-between gap-4">
-                <span>تعداد آیتم</span>
-                <span className="text-[#333230]">{totalItems.toLocaleString("fa-IR")}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span>جمع کل</span>
-                <span className="text-[#333230]">{formatPrice(totalPrice)} تومان</span>
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-end justify-between gap-4">
-              <span className="text-sm font-bold text-[#77736D]">قابل پرداخت</span>
-              <span className="text-2xl font-black text-[#333230]">
-                {formatPrice(totalPrice)} تومان
-              </span>
-            </div>
-
-            {itemsWithIssues.length > 0 && (
-              <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-bold leading-6 text-red-600">
-                قبل از تسویه، تعداد یا موجودی {itemsWithIssues.length.toLocaleString("fa-IR")} محصول را اصلاح کن.
-              </p>
-            )}
-
-            <div className="mt-6 grid gap-3">
-              {canCheckout ? (
-                <Link
-                  href={checkoutHref}
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] shadow-[0_16px_30px_-22px_rgba(51,50,48,0.85)] transition hover:-translate-y-0.5 hover:bg-[#B2894C]"
-                >
-                  تسویه حساب
-                </Link>
-              ) : (
                 <button
                   type="button"
-                  disabled
-                  className="inline-flex h-12 cursor-not-allowed items-center justify-center rounded-xl bg-[#E3DED5] px-6 text-sm font-black text-[#9A948C]"
+                  onClick={handleClearCart}
+                  className="inline-flex min-h-[54px] items-center justify-center rounded-[17px] border border-red-200 bg-red-50 px-6 text-[20px] font-black text-red-700 transition-all duration-500 hover:-translate-y-1 hover:bg-red-100"
                 >
-                  تسویه حساب
+                  خالی‌کردن سبد
                 </button>
-              )}
-              <Link
-                href="/products"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-[#E3DED5] bg-white px-6 text-sm font-black text-[#333230] transition hover:border-[#D2AD70] hover:bg-[#F6F1E8]"
-              >
-                ادامه خرید از فروشگاه
-              </Link>
+              </div>
+
+              <div className="grid gap-5">
+                {items.map((item, index) => (
+                  <CartItemCard
+                    key={item.product.id}
+                    item={item}
+                    index={index}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </div>
             </div>
-            <p className="mt-5 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] px-4 py-3 text-xs font-bold leading-6 text-[#77736D]">
-              مبلغ نهایی و روش تحویل در مرحله بعد، پیش از ثبت سفارش، دوباره بررسی می‌شود.
-            </p>
-          </aside>
-        </section>
-      </main>
-    );
-  }
+          )}
+        </div>
+
+        <CartSummary
+          totalItems={totalItems}
+          totalPrice={totalPrice}
+          issueCount={itemsWithIssues.length}
+          canCheckout={canCheckout}
+          checkoutHref={checkoutHref}
+          isAuthenticated={isAuthenticated}
+          isSyncing={isSyncing}
+        />
+      </section>
+
+      <style jsx global>{`
+        .cart-page-shell {
+          isolation: isolate;
+        }
+
+        .cart-enter {
+          animation: cart-enter-up 780ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .cart-item-enter {
+          animation: cart-enter-up 820ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .cart-summary-enter {
+          animation: cart-enter-left 900ms 120ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .cart-sync-dot {
+          animation: cart-sync-pulse 1.2s ease-in-out
+            infinite;
+        }
+
+        .cart-shine-button {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .cart-shine-button::after {
+          content: "";
+          position: absolute;
+          inset-y: 0;
+          left: -45%;
+          width: 28%;
+          transform: skewX(-18deg);
+          background: linear-gradient(
+            to right,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent
+          );
+        }
+
+        .cart-shine-button:hover::after {
+          animation: cart-button-shine 850ms ease-out;
+        }
+
+        @keyframes cart-enter-up {
+          from {
+            opacity: 0;
+            filter: blur(5px);
+            transform: translateY(34px);
+          }
+
+          to {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes cart-enter-left {
+          from {
+            opacity: 0;
+            filter: blur(5px);
+            transform: translateX(-38px);
+          }
+
+          to {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes cart-sync-pulse {
+          0%,
+          100% {
+            opacity: 0.45;
+            transform: scale(0.88);
+          }
+
+          50% {
+            opacity: 1;
+            transform: scale(1.12);
+          }
+        }
+
+        @keyframes cart-button-shine {
+          from {
+            transform: translateX(0) skewX(-18deg);
+          }
+
+          to {
+            transform: translateX(620%) skewX(-18deg);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .cart-page-shell *,
+          .cart-page-shell *::before,
+          .cart-page-shell *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
+    </main>
+  );
+}

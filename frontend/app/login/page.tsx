@@ -79,7 +79,7 @@ export default function LoginPage() {
             <div>
               <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white shadow-[0_16px_34px_-24px_rgba(51,50,48,0.75)]">
                 <Image
-                  src="/brand/logo.png"
+                  src="/brand/logo.webp"
                   alt="لوگوی چاپی چاپ"
                   width={160}
                   height={160}

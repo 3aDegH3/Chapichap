@@ -37,18 +37,45 @@ export default function ContactPage() {
     <main className="bg-[#FAFAF8]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localBusinessJsonLd),
+        }}
       />
 
       <ContactHero />
       <ContactMethods />
 
-      <PageSection className="bg-[#FAFAF8]">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-start">
-          <ContactForm />
-          <ContactMap />
+      <section className="border-b border-[#E8E1D8] bg-[#F3EEE7] py-16 sm:py-20 lg:py-24">
+        <div className="mx-auto max-w-[1760px] px-5 sm:px-8 lg:px-12">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-3">
+              <span className="h-1.5 w-12 rounded-full bg-[#C99A52]" />
+              <p className="text-[20px] font-black text-[#A16E2D]">
+                ارسال پیام
+              </p>
+            </div>
+
+            <h2 className="mt-4 text-[34px] font-black leading-[1.55] text-[#302B27] sm:text-[42px] lg:text-[48px]">
+              درخواستت را مستقیم برای ما بنویس
+            </h2>
+
+            <p className="mt-5 text-[20px] font-medium leading-[2] text-[#746D65] sm:text-[22px]">
+              موضوع پیام را انتخاب کن و توضیحات لازم را بنویس. فرم تماس به
+              همان API فعلی پروژه متصل است و نیازی به تغییر بک‌اند ندارد.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] xl:items-start">
+            <ContactForm />
+
+            <div className="grid gap-7">
+              <ContactMap />
+
+
+            </div>
+          </div>
         </div>
-      </PageSection>
+      </section>
 
       <ContactFAQ />
 

@@ -142,6 +142,39 @@ body {
   line-height: 1.5;
 }
 
+/*
+ * Desktop readability floor
+ *
+ * Keep the compact mobile typography intact, but never render interface copy
+ * below 20px on desktop. Tailwind's named sizes are controlled through its
+ * theme variables; arbitrary sizes need an explicit override.
+ */
+@media (min-width: 1024px) {
+  :root {
+    --text-xs: 20px;
+    --text-sm: 20px;
+    --text-base: 20px;
+  }
+
+  [class~="text-[10px]"],
+  [class~="text-[11px]"],
+  [class~="text-[12px]"],
+  [class~="text-[13px]"],
+  [class~="text-[14px]"],
+  [class~="text-[15px]"],
+  [class~="text-[16px]"],
+  [class~="text-[17px]"],
+  [class~="text-[18px]"],
+  [class~="text-[19px]"],
+  [class~="sm:text-[14px]"],
+  [class~="sm:text-[15px]"],
+  [class~="sm:text-[16px]"],
+  [class~="sm:text-[17px]"],
+  [class~="2xl:text-[19px]"] {
+    font-size: 20px !important;
+  }
+}
+
 ::selection {
   background: var(--primary);
   color: #ffffff;

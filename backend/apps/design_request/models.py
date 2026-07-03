@@ -21,6 +21,7 @@ class UploadedFile(models.Model):
         blank=True,
         null=True,
     )
+    session_key = models.CharField(max_length=40, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

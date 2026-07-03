@@ -75,7 +75,7 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-3 rounded-full border border-[#D8CFC0] bg-white/78 px-3 py-2 shadow-[0_18px_50px_-42px_rgba(51,50,48,0.65)] backdrop-blur">
               <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
                 <Image
-                  src="/brand/logo.png"
+                  src="/brand/logo.webp"
                   alt="لوگوی چاپی چاپ"
                   width={72}
                   height={72}

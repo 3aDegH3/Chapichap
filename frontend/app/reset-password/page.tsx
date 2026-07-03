@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
       <section className="mx-auto max-w-xl overflow-hidden rounded-2xl border border-[#D8CFC0] bg-[#FAFAF8] p-6 shadow-[0_24px_70px_-42px_rgba(51,50,48,0.65)] sm:p-8">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-[#D2AD70]/60 bg-white">
-            <Image src="/brand/logo.png" alt="لوگوی چاپی چاپ" width={128} height={128} className="h-full w-full object-contain" />
+            <Image src="/brand/logo.webp" alt="لوگوی چاپی چاپ" width={128} height={128} className="h-full w-full object-contain" />
           </div>
           <div>
             <p className="text-sm font-black text-[#B2894C]">رمز جدید</p>

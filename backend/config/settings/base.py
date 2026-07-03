@@ -23,11 +23,15 @@ def load_dotenv_file(path):
 
 load_dotenv_file(BASE_DIR.parent / ".env")
 
-SECRET_KEY = 'django-insecure-c8=0mx04$(ys@)#b5gu&b1@-^tx5cchl!9cvqc@tlk1_8z*dq'
+SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-development-key-change-me")
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
 
 
 # =========================
@@ -47,6 +51,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
 
     # Local apps
     "apps.core",
@@ -110,11 +115,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'chapichap',
-        'USER': 'SadeghHelda',
-        'PASSWORD': 'S#3cR!9pL@2qM$xK7vBn%8',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'chapichap'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -172,6 +177,8 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", DEFAULT_FROM_EMAIL)
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
 
+ENABLE_MOCK_PAYMENTS = os.environ.get("ENABLE_MOCK_PAYMENTS", "false").lower() == "true"
+
 
 # =========================
 # CORS
@@ -207,6 +214,8 @@ REST_FRAMEWORK = {
 
     "DEFAULT_THROTTLE_RATES": {
         "contact_messages": "5/hour",
+        "design_requests": "10/hour",
+        "design_uploads": "20/hour",
         "review_create": "5/hour",
     },
 }

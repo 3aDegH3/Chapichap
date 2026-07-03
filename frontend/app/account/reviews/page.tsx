@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import RatingStars from "@/components/reviews/RatingStars";
 import Pagination from "@/components/ui/Pagination";
-import { getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage } from "@/lib/api"
 import {
   AccountReview,
   deleteReview,

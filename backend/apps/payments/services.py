@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
@@ -28,7 +29,7 @@ PAYMENT_METHODS = [
         "code": Payment.Method.ONLINE_GATEWAY,
         "title": "پرداخت آنلاین آزمایشی",
         "description": "درگاه آزمایشی برای شبیه‌سازی پرداخت موفق یا ناموفق.",
-        "is_active": True,
+        "is_active": settings.ENABLE_MOCK_PAYMENTS,
         "requires_redirect": True,
     },
     {
@@ -156,10 +157,14 @@ def get_active_payment_method(code):
     return method
 
 
-def get_order_for_payment(order_id, user=None):
+def get_order_for_payment(order_id, user=None, session_key=""):
     order_queryset = Order.objects.select_for_update()
     if user and user.is_authenticated:
         order_queryset = order_queryset.filter(user=user)
+    elif session_key:
+        order_queryset = order_queryset.filter(session_key=session_key)
+    else:
+        order_queryset = order_queryset.none()
 
     try:
         return order_queryset.get(id=order_id)
@@ -283,9 +288,9 @@ def start_gateway_transaction(payment, idempotency_key=""):
 
 
 @transaction.atomic
-def initialize_payment(order_id, method, user=None, idempotency_key=""):
+def initialize_payment(order_id, method, user=None, session_key="", idempotency_key=""):
     payment_method = get_active_payment_method(method)
-    order = get_order_for_payment(order_id, user=user)
+    order = get_order_for_payment(order_id, user=user, session_key=session_key)
 
     if method == Payment.Method.IN_PERSON:
         payment, _created = get_or_create_payment(order, method, Payment.Provider.MANUAL)
@@ -301,13 +306,27 @@ def initialize_payment(order_id, method, user=None, idempotency_key=""):
 
 
 @transaction.atomic
-def handle_mock_callback(transaction_id, status, user=None):
-    try:
-        transaction_obj = (
-            Transaction.objects.select_for_update()
-            .select_related("payment", "payment__order")
-            .get(id=transaction_id, gateway=MockPaymentGateway.code)
+def handle_mock_callback(transaction_id, status, user=None, session_key=""):
+    if not settings.ENABLE_MOCK_PAYMENTS:
+        raise ValidationError("درگاه آزمایشی فعال نیست.")
+
+    transaction_queryset = (
+        Transaction.objects.select_for_update()
+        .select_related("payment", "payment__order")
+        .filter(gateway=MockPaymentGateway.code)
+    )
+
+    if user and user.is_authenticated:
+        transaction_queryset = transaction_queryset.filter(payment__order__user=user)
+    elif session_key:
+        transaction_queryset = transaction_queryset.filter(
+            payment__order__session_key=session_key,
         )
+    else:
+        transaction_queryset = transaction_queryset.none()
+
+    try:
+        transaction_obj = transaction_queryset.get(id=transaction_id)
     except Transaction.DoesNotExist as exc:
         raise ValidationError("تراکنش پیدا نشد.") from exc
 

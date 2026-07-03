@@ -208,18 +208,23 @@ class OrderListCreateAPIView(APIView):
         idempotency_key = (serializer.validated_data.get("idempotency_key") or "").strip()
 
         if idempotency_key:
-            existing_order_queryset = Order.objects.filter(idempotency_key=idempotency_key)
-            if request.user.is_authenticated:
-                existing_order_queryset = existing_order_queryset.filter(user=request.user)
-            elif request.session.session_key:
-                existing_order_queryset = existing_order_queryset.filter(
-                    session_key=request.session.session_key
-                )
-            else:
-                existing_order_queryset = existing_order_queryset.none()
-
-            existing_order = existing_order_queryset.first()
+            existing_order = Order.objects.filter(idempotency_key=idempotency_key).first()
             if existing_order:
+                is_owner = (
+                    request.user.is_authenticated
+                    and existing_order.user_id == request.user.id
+                ) or (
+                    not request.user.is_authenticated
+                    and bool(request.session.session_key)
+                    and existing_order.session_key == request.session.session_key
+                )
+
+                if not is_owner:
+                    return Response(
+                        {"detail": "کلید ثبت سفارش معتبر نیست."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 return Response(
                     OrderSerializer(existing_order, context={"request": request}).data,
                     status=status.HTTP_200_OK,

@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 
-import AboutFinalCTA from "@/components/about/AboutFinalCTA";
-import AboutHero from "@/components/about/AboutHero";
-import BrandMission from "@/components/about/BrandMission";
-import BrandStory from "@/components/about/BrandStory";
-import BrandValues from "@/components/about/BrandValues";
-import OrderProcess from "@/components/about/OrderProcess";
-import ServicesGrid from "@/components/about/ServicesGrid";
+import AboutClient from "@/components/about/AboutClient";
 
 export const metadata: Metadata = {
   title: "درباره چاپی چاپ | تیم طراحی، چاپ و هدایای اختصاصی",
@@ -18,15 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
-  return (
-    <main className="bg-[#FAFAF8]">
-      <AboutHero />
-      <BrandStory />
-      <BrandMission />
-      <ServicesGrid />
-      <BrandValues />
-      <OrderProcess />
-      <AboutFinalCTA />
-    </main>
-  );
+  return <AboutClient />;
 }

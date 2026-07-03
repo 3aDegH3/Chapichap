@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { useState, type ReactNode } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -13,11 +12,31 @@ import {
 import { getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
 
 const contactSubjects = [
-  { value: "order", label: "سفارش محصول" },
-  { value: "custom_design", label: "طراحی اختصاصی" },
-  { value: "collaboration", label: "همکاری" },
-  { value: "follow_up", label: "پیگیری سفارش" },
-  { value: "general", label: "سؤال عمومی" },
+  {
+    value: "order",
+    label: "سفارش محصول",
+    helper: "راهنمایی برای انتخاب یا ثبت سفارش محصول",
+  },
+  {
+    value: "custom_design",
+    label: "طراحی اختصاصی",
+    helper: "تبدیل ایده یا تصویر اولیه به طرح قابل چاپ",
+  },
+  {
+    value: "collaboration",
+    label: "همکاری",
+    helper: "همکاری سازمانی، عمده یا تجاری",
+  },
+  {
+    value: "follow_up",
+    label: "پیگیری سفارش",
+    helper: "پیگیری وضعیت سفارش ثبت‌شده",
+  },
+  {
+    value: "general",
+    label: "سؤال عمومی",
+    helper: "پرسش درباره خدمات، چاپ یا محصولات",
+  },
 ] as const;
 
 const contactSchema = z.object({
@@ -26,9 +45,18 @@ const contactSchema = z.object({
     .string()
     .trim()
     .min(8, "شماره تماس معتبر وارد کنید.")
-    .regex(/^[0-9۰-۹٠-٩+\-()\s]+$/, "شماره تماس فقط می‌تواند شامل عدد، فاصله یا + باشد."),
-  subject: z.enum(["order", "custom_design", "collaboration", "follow_up", "general"]),
-  message: z.string().trim().min(10, "متن پیام باید حداقل ۱۰ کاراکتر باشد."),
+    .regex(
+      /^[0-9۰-۹٠-٩+\-()\s]+$/,
+      "شماره تماس فقط می‌تواند شامل عدد، فاصله یا + باشد.",
+    ),
+  subject: z.enum([
+    "order",
+    "custom_design",
+    "collaboration",
+    "follow_up",
+    "general",
+  ]),
+  message: z.string().trim().min(20, "متن پیام باید حداقل ۲۰ کاراکتر باشد."),
   contact_permission: z.boolean(),
 });
 
@@ -47,6 +75,7 @@ export default function ContactForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const {
+    control,
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
@@ -58,6 +87,17 @@ export default function ContactForm() {
     defaultValues,
   });
 
+  const selectedSubject = useWatch({
+    control,
+    name: "subject",
+  });
+
+  const messageValue =
+    useWatch({
+      control,
+      name: "message",
+    }) || "";
+
   async function onSubmit(values: ContactFormValues) {
     setServerError("");
     setSuccessMessage("");
@@ -65,7 +105,7 @@ export default function ContactForm() {
     try {
       await createContactMessage(values as ContactMessagePayload);
       setSuccessMessage(
-        "پیام شما با موفقیت ثبت شد. تیم چاپی چاپ در اولین فرصت با شما ارتباط می‌گیرد."
+        "پیام شما با موفقیت ثبت شد. تیم چاپی چاپ در اولین فرصت با شما ارتباط می‌گیرد.",
       );
       reset(defaultValues);
     } catch (error) {
@@ -82,7 +122,7 @@ export default function ContactForm() {
 
       setServerError(
         getApiErrorMessage(error) ||
-          "ارسال پیام انجام نشد. لطفاً دوباره تلاش کنید یا از طریق شماره تماس و اینستاگرام با ما در ارتباط باشید."
+          "ارسال پیام انجام نشد. لطفاً دوباره تلاش کنید یا از طریق شماره تماس با ما در ارتباط باشید.",
       );
     }
   }
@@ -90,16 +130,24 @@ export default function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="rounded-2xl border border-[#E3DED5] bg-white p-5 shadow-[0_18px_45px_-36px_rgba(51,50,48,0.7)] sm:p-6"
+      className="relative overflow-hidden rounded-[32px] border border-[#DED5CA] bg-white p-5 shadow-[0_28px_70px_-50px_rgba(48,40,32,0.55)] sm:p-7 lg:p-8"
     >
-      <div>
-        <p className="text-sm font-black text-[#B2894C]">فرم تماس</p>
-        <h2 className="mt-2 text-2xl font-black text-[#333230]">
-          پیام خود را برای ما بفرستید
+      <span className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#D2AD70]/10 blur-[80px]" />
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-[#D2AD70] to-transparent" />
+
+      <div className="relative">
+        <p className="text-[20px] font-black text-[#A16E2D]">فرم تماس</p>
+
+        <h2 className="mt-2 text-[32px] font-black leading-[1.55] text-[#302B27] sm:text-[38px]">
+          پیام خود را برای ما بفرست
         </h2>
+
+        <p className="mt-3 text-[20px] font-medium leading-[1.9] text-[#766F67]">
+          اطلاعات زیر فقط برای پاسخ‌گویی و پیگیری همین درخواست استفاده می‌شوند.
+        </p>
       </div>
 
-      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+      <div className="relative mt-8 grid gap-5 sm:grid-cols-2">
         <Field
           id="full_name"
           label="نام و نام خانوادگی"
@@ -108,8 +156,7 @@ export default function ContactForm() {
           <input
             id="full_name"
             {...register("full_name")}
-            aria-invalid={Boolean(errors.full_name)}
-            aria-describedby={errors.full_name ? "full_name-error" : undefined}
+            placeholder="نام شما"
             className={inputClass(Boolean(errors.full_name))}
           />
         </Field>
@@ -119,59 +166,116 @@ export default function ContactForm() {
             id="phone"
             {...register("phone")}
             inputMode="tel"
-            aria-invalid={Boolean(errors.phone)}
-            aria-describedby={errors.phone ? "phone-error" : undefined}
+            placeholder="مثلاً 09123456789"
             className={inputClass(Boolean(errors.phone))}
           />
         </Field>
+      </div>
 
-        <Field id="subject" label="موضوع درخواست" error={errors.subject?.message}>
-          <select
-            id="subject"
-            {...register("subject")}
-            aria-invalid={Boolean(errors.subject)}
-            aria-describedby={errors.subject ? "subject-error" : undefined}
-            className={inputClass(Boolean(errors.subject))}
-          >
-            {contactSubjects.map((subject) => (
-              <option key={subject.value} value={subject.value}>
-                {subject.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+      <div className="relative mt-7">
+        <p className="text-[20px] font-black text-[#302B27]">موضوع درخواست</p>
 
-        <div className="flex items-end">
-          <label className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-[#E3DED5] bg-[#FAFAF8] px-4 py-3 text-sm font-bold text-[#333230]">
-            <input
-              type="checkbox"
-              {...register("contact_permission")}
-              className="h-4 w-4 accent-[#D2AD70]"
-            />
-            رضایت دارم تیم چاپی چاپ برای پیگیری با من تماس بگیرد.
-          </label>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {contactSubjects.map((subject, index) => {
+            const isActive = selectedSubject === subject.value;
+
+            return (
+              <label
+                key={subject.value}
+                className={[
+                  "group cursor-pointer rounded-[20px] border p-4 transition-all duration-500",
+                  isActive
+                    ? "border-[#C99A52] bg-[#F5EAD8] shadow-[0_18px_35px_-28px_rgba(116,79,34,0.45)]"
+                    : "border-[#E3DBD0] bg-[#FBFAF7] hover:-translate-y-1 hover:border-[#D2AD70]",
+                ].join(" ")}
+              >
+                <input
+                  type="radio"
+                  value={subject.value}
+                  className="sr-only"
+                  {...register("subject")}
+                />
+
+                <div className="flex items-start gap-4">
+                  <span
+                    className={[
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] text-[20px] font-black transition-all duration-500",
+                      isActive
+                        ? "bg-[#302C28] text-[#E1B976]"
+                        : "bg-[#F1E8DC] text-[#98672B] group-hover:rotate-[-5deg]",
+                    ].join(" ")}
+                  >
+                    {(index + 1).toLocaleString("fa-IR", {
+                      minimumIntegerDigits: 2,
+                    })}
+                  </span>
+
+                  <span>
+                    <span className="block text-[21px] font-black text-[#302B27]">
+                      {subject.label}
+                    </span>
+                    <span className="mt-1.5 block text-[20px] font-medium leading-[1.75] text-[#766F67]">
+                      {subject.helper}
+                    </span>
+                  </span>
+                </div>
+              </label>
+            );
+          })}
         </div>
       </div>
 
-      <Field id="message" label="متن پیام" error={errors.message?.message} className="mt-5">
+      <Field
+        id="message"
+        label="متن پیام"
+        error={errors.message?.message}
+        className="relative mt-7"
+      >
         <textarea
           id="message"
           {...register("message")}
-          rows={6}
-          aria-invalid={Boolean(errors.message)}
-          aria-describedby={errors.message ? "message-error" : undefined}
-          className={`${inputClass(Boolean(errors.message))} h-auto resize-none py-3 leading-8`}
+          rows={7}
+          placeholder="درخواست، سؤال یا توضیحات سفارش را با جزئیات بنویس..."
+          className={`${inputClass(Boolean(errors.message))} h-auto resize-none py-4 leading-[1.9]`}
         />
+
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[20px] font-bold text-[#8B8177]">
+            حداقل ۲۰ کاراکتر
+          </p>
+          <p
+            className={[
+              "text-[20px] font-black",
+              messageValue.trim().length >= 20
+                ? "text-emerald-700"
+                : "text-[#9B692B]",
+            ].join(" ")}
+          >
+            {messageValue.length.toLocaleString("fa-IR")} کاراکتر
+          </p>
+        </div>
       </Field>
 
-      <div aria-live="polite" className="mt-5">
+      <label className="relative mt-6 flex cursor-pointer items-start gap-4 rounded-[20px] border border-[#E3DBD0] bg-[#FBFAF7] p-4 transition-all duration-300 hover:border-[#D2AD70] hover:bg-[#F7F1E8]">
+        <input
+          type="checkbox"
+          {...register("contact_permission")}
+          className="mt-1 h-6 w-6 shrink-0 accent-[#B2894C]"
+        />
+        <span className="text-[20px] font-bold leading-[1.9] text-[#4F4943]">
+          رضایت دارم تیم چاپی چاپ برای پیگیری این درخواست با من تماس بگیرد.
+        </span>
+      </label>
+
+      <div aria-live="polite" className="relative mt-6">
         {successMessage && (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-7 text-emerald-800">
+          <p className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-5 text-[20px] font-bold leading-[1.9] text-emerald-800">
             {successMessage}
           </p>
         )}
+
         {serverError && (
-          <p className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-bold leading-7 text-red-700">
+          <p className="rounded-[20px] border border-red-200 bg-red-50 p-5 text-[20px] font-bold leading-[1.9] text-red-700">
             {serverError}
           </p>
         )}
@@ -180,7 +284,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-6 h-12 w-full rounded-2xl bg-[#D2AD70] px-6 text-sm font-black text-[#333230] transition duration-300 hover:-translate-y-0.5 hover:bg-[#B2894C] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="contact-shine relative mt-7 inline-flex min-h-[62px] w-full items-center justify-center rounded-[20px] bg-[#302C28] px-8 text-[20px] font-black text-white shadow-[0_20px_45px_-28px_rgba(48,44,40,0.72)] transition-all duration-500 hover:-translate-y-1 hover:bg-[#A87431] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {isSubmitting ? "در حال ارسال..." : "ارسال پیام"}
       </button>
@@ -203,12 +307,12 @@ function Field({
 }) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-black text-[#333230]">
+      <label htmlFor={id} className="block text-[20px] font-black text-[#302B27]">
         {label}
       </label>
-      <div className="mt-2">{children}</div>
+      <div className="mt-3">{children}</div>
       {error && (
-        <p id={`${id}-error`} className="mt-2 text-xs font-bold text-red-600">
+        <p id={`${id}-error`} className="mt-2 text-[20px] font-bold leading-[1.7] text-red-600">
           {error}
         </p>
       )}
@@ -217,9 +321,10 @@ function Field({
 }
 
 function inputClass(hasError: boolean) {
-  return `h-12 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#333230] outline-none transition placeholder:text-[#A8A29A] focus:ring-4 ${
+  return [
+    "min-h-[58px] w-full rounded-[17px] border bg-white px-5 text-[20px] font-medium text-[#302B27] outline-none transition-all duration-300 placeholder:text-[20px] placeholder:text-[#A49A90] focus:ring-4",
     hasError
       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-      : "border-[#E3DED5] focus:border-[#D2AD70] focus:ring-[#D2AD70]/20"
-  }`;
+      : "border-[#DDD5CA] focus:border-[#C99A52] focus:ring-[#C99A52]/15",
+  ].join(" ");
 }

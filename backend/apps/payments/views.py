@@ -33,6 +33,7 @@ class PaymentInitAPIView(APIView):
                 order_id=serializer.validated_data["order_id"],
                 method=serializer.validated_data["method"],
                 user=request.user,
+                session_key=request.session.session_key or "",
                 idempotency_key=serializer.validated_data.get("idempotency_key", ""),
             )
         except ValidationError as error:
@@ -75,6 +76,7 @@ class MockPaymentCallbackAPIView(APIView):
                 transaction_id=serializer.validated_data["transaction_id"],
                 status=serializer.validated_data["status"],
                 user=request.user,
+                session_key=request.session.session_key or "",
             )
         except ValidationError as error:
             return Response({"detail": error.message}, status=status.HTTP_400_BAD_REQUEST)
